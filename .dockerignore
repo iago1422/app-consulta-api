@@ -1,10 +1,11 @@
 **/bin/
 **/obj/
-**/.vs/
-**/.vscode/
-**/*.user
-**/*.suo
-.env
-.git
+.vscode/
+.vs/
+.git/
 .gitignore
 Dockerfile
+docker-compose*.yml
+*.user
+*.suo
+README.md

@@ -1,13 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.32126.315
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spark.Api", "Spark.Api\Spark.Api.csproj", "{99C209DE-57E1-4F03-9D98-66796DAC8E27}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spark.Domain", "Spark.Domain\Spark.Domain.csproj", "{BEBB143C-480B-4C15-89F9-67E2CC3E1E56}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spark.Domain", "Spark.Domain\Spark.Domain.csproj", "{BEBB143C-480B-4C15-89F9-67E2CC3E1E56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spark.Infra", "Spark.Infra\Spark.Infra.csproj", "{F284FBF0-00AE-40E8-9EE5-2065B0FA375F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spark.Infra", "Spark.Infra\Spark.Infra.csproj", "{F284FBF0-00AE-40E8-9EE5-2065B0FA375F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Itens de Solução", "Itens de Solução", "{1DBDE2C6-02EE-492A-A85A-965F7B097F56}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerfile = .dockerfile
+		.dockerignore = .dockerignore
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,7 +36,7 @@ Global
 		{99C209DE-57E1-4F03-9D98-66796DAC8E27}.Release|x64.ActiveCfg = Release|Any CPU
 		{99C209DE-57E1-4F03-9D98-66796DAC8E27}.Release|x64.Build.0 = Release|Any CPU
 		{99C209DE-57E1-4F03-9D98-66796DAC8E27}.Release|x86.ActiveCfg = Release|Any CPU
-		{99C209DE-57E1-4F03-9D98-66796DAC8E27}.Release|x86.Build.0 = Release|Any CPU				
+		{99C209DE-57E1-4F03-9D98-66796DAC8E27}.Release|x86.Build.0 = Release|Any CPU
 		{BEBB143C-480B-4C15-89F9-67E2CC3E1E56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BEBB143C-480B-4C15-89F9-67E2CC3E1E56}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEBB143C-480B-4C15-89F9-67E2CC3E1E56}.Debug|x64.ActiveCfg = Debug|Any CPU

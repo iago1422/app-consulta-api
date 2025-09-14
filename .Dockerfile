@@ -1,26 +1,28 @@
-# ===== build =====
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+# syntax=docker/dockerfile:1
+
+# Runtime (imagem leve)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+# Apenas dica; o Render injeta $PORT em runtime
+EXPOSE 8080
+
+# Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia csprojs primeiro (cache)
-COPY Spark.Domain/Spark.Domain.csproj Spark.Domain/
-COPY Spark.Infra/Spark.Infra.csproj   Spark.Infra/
-COPY SparkApi/SparkApi.csproj         SparkApi/
-
-RUN dotnet restore SparkApi/SparkApi.csproj
-
-# Copia o restante
+# Copia tudo (simples e seguro se você não quer listar cada .csproj)
 COPY . .
-RUN dotnet publish SparkApi/SparkApi.csproj -c Release -o /app/publish --no-restore
 
-# ===== runtime =====
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS runtime
+# Restaura e publica a API
+RUN dotnet restore ./Spark.Api/Spark.Api.csproj
+RUN dotnet publish ./Spark.Api/Spark.Api.csproj -c Release -o /app/out /p:UseAppHost=false
+
+# Final
+FROM base AS final
 WORKDIR /app
-ENV ASPNETCORE_ENVIRONMENT=Production
+COPY --from=build /app/out .
+
+# Faz a API escutar na porta que o Render fornecer.
+# Localmente, se $PORT não existir, usa 8080.
 ENV DOTNET_EnableDiagnostics=0
-
-COPY --from=build /app/publish ./
-
-# Render injeta a porta em $PORT
-EXPOSE 8080
-CMD ["sh","-c","dotnet SparkApi.dll --urls http://0.0.0.0:${PORT}"]
+ENTRYPOINT ["sh","-c","dotnet Spark.Api.dll --urls http://0.0.0.0:${PORT:-8080}"]
