@@ -27,6 +27,9 @@ namespace Spark.Domain.Commands
         public class Response
         {
             public Guid Id { get; set; }
+            public bool Sucess { get; set; } = false;
+            public string Mensagem { get; set; }
+            public string Erro { get; set; }
         }
     }
 }

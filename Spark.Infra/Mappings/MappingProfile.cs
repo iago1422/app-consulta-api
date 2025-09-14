@@ -16,6 +16,9 @@ namespace Spark.Domain.Infra.Mappings
 
             CreateMap<Usuario, CriarUsuario.RequestBanco>()
                 .ForMember(x => x.Email, opt => opt.MapFrom(s => s.UserName)).ReverseMap();
+            
+            CreateMap<ContaCredito, CriarCreditos.Request>().ReverseMap();
+
         }
     }
 }

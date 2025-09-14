@@ -14,7 +14,6 @@ namespace Spark.Domain.Commands.Usuario
             public string Email { get; set; }
             public string Senha { get; set; }
             public string Cpf { get; set; }
-            public string Rg { get; set; }
             public Guid PerfilId { get; set; }
             public string Imagem { get; set; }
 
@@ -38,7 +37,6 @@ namespace Spark.Domain.Commands.Usuario
             public string Email { get; set; }
             public string Senha { get; set; }
             public string Cpf { get; set; }
-            public string Rg { get; set; }
             public string Perfil { get; set; }
             //public Guid PlanoId { get; set; }
             public string Imagem { get; set; }

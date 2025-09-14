@@ -64,7 +64,6 @@ namespace Spark.Domain.Infra.Repositories
                     {
                         requestBanco.PerfilId = perfil.Id;
                         requestBanco.Nome = DTO.Nome;
-                        requestBanco.Rg = DTO.Rg;
                         requestBanco.Senha = DTO.Senha;
                         requestBanco.Email = DTO.Email;
                         requestBanco.Cpf = DTO.Cpf;

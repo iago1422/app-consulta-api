@@ -22,10 +22,10 @@ namespace Spark.Api.Controllers
     [Route("creditos")]
     public class CreditoController : ControllerBase
     {
-        private readonly IImagemRepository _repository; 
+        private readonly ICreditosRepository _repository; 
         private readonly IConfiguration _configuration;
 
-        public CreditoController(IImagemRepository repository, IConfiguration configuration)  // Construtor para injetar o repositório
+        public CreditoController(ICreditosRepository repository, IConfiguration configuration)  
         {
             _repository = repository;
             _configuration = configuration;
@@ -34,11 +34,20 @@ namespace Spark.Api.Controllers
         [Route("get-by-id/{idatividade}")]
         [HttpGet]
         ///get
-        public async Task<IActionResult> GetById([FromServices] IImagemRepository repository, [FromRoute] Guid idatividade)
+        public async Task<IActionResult> GetById([FromServices] ICreditosRepository repository, [FromRoute] Guid idatividade)
         {
             return Ok(new { Data = repository.GetById(idatividade) });
         }
 
-       
+        [Route("")]
+        [HttpPost]
+        ///post
+        public async Task<GenericCommandResult> Create([FromBody] CriarCreditos.Request command, [FromServices] CreditosHandler handler)
+        {
+            return await handler.Handle(command);
+        }
+
+
+
     }
 }

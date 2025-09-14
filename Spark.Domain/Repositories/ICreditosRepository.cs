@@ -10,8 +10,7 @@ namespace Spark.Domain.Repositories
 {
     public interface ICreditosRepository
     {
-        Task<bool> Create(CriarImagem.Request atividade);
-        Imagem GetById(Guid id);
-        void Delete(DeletarImagem.Request despesa);
+        Task<CriarCreditos.Response> Create(CriarCreditos.Request objeto);
+        ContaCredito GetById(Guid id);
     }
 }

@@ -74,10 +74,13 @@ namespace Spark.Domain.Api
             services.AddTransient<IMailService, SendGridEmailService>();
             services.AddTransient<IPerfilRepository, PerfilRepository>();
             services.AddTransient<IImagemRepository, ImagemRepository>();
+            services.AddTransient<ICreditosRepository, CreditosRepository>();
 
             services.AddTransient<ITokenService, TokenService>();        
             services.AddTransient<UsuarioHandler, UsuarioHandler>();
             services.AddTransient<ImagemHandler, ImagemHandler>();
+            services.AddTransient<CreditosHandler, CreditosHandler>();
+
 
 
 
