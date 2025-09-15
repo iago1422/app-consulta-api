@@ -9,10 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spark.Domain", "Spark.Domai
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spark.Infra", "Spark.Infra\Spark.Infra.csproj", "{F284FBF0-00AE-40E8-9EE5-2065B0FA375F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Itens de Solução", "Itens de Solução", "{1DBDE2C6-02EE-492A-A85A-965F7B097F56}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Itens de Solução", "Itens de Solução", "{BFC65A51-B6AD-443B-B81F-193110817397}"
 	ProjectSection(SolutionItems) = preProject
-		.dockerfile = .dockerfile
 		.dockerignore = .dockerignore
+		Dockerfile.Dockerfile = Dockerfile.Dockerfile
 	EndProjectSection
 EndProject
 Global

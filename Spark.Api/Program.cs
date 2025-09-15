@@ -1,4 +1,4 @@
-using System.IO;
+using System;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -17,19 +17,19 @@ namespace Spark.Domain.Api
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
                     var env = hostingContext.HostingEnvironment;
-
-                    // Zera fontes e reconstrói de forma tolerante
                     config.Sources.Clear();
-
                     config.SetBasePath(env.ContentRootPath)
                           .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                           .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-                          .AddEnvironmentVariables(); // Render usa ENV VARS
+                          .AddEnvironmentVariables();
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    // Força bind em 0.0.0.0:<PORT> (fallback 8080)
+                    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+                    webBuilder.UseUrls($"http://0.0.0.0:{port}");
+
                     webBuilder.UseStartup<Startup>();
-                    // Porta já é setada no ENTRYPOINT (--urls http://0.0.0.0:$PORT)
                 });
     }
 }
