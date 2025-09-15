@@ -18,6 +18,7 @@ namespace Spark.Domain.Api
                 {
                     var env = hostingContext.HostingEnvironment;
                     config.Sources.Clear();
+
                     config.SetBasePath(env.ContentRootPath)
                           .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                           .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
@@ -25,7 +26,7 @@ namespace Spark.Domain.Api
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    // Força bind em 0.0.0.0:<PORT> (fallback 8080)
+                    // Render injeta PORT; fallback local = 8080
                     var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
                     webBuilder.UseUrls($"http://0.0.0.0:{port}");
 

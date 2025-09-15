@@ -5,6 +5,7 @@
 #########################
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
+# EXPOSE é opcional para Render, mas ajuda localmente
 EXPOSE 8080
 ENV DOTNET_EnableDiagnostics=0
 
@@ -33,5 +34,5 @@ FROM base AS final
 WORKDIR /app
 COPY --from=build /app/out .
 
-# Força bind na porta do Render ($PORT) ou 8080 local
-ENTRYPOINT ["sh","-c","dotnet Spark.Api.dll --urls http://0.0.0.0:${PORT:-8080}"]
+# Start — Program.cs já binda em 0.0.0.0:$PORT
+ENTRYPOINT ["dotnet", "Spark.Api.dll"]
