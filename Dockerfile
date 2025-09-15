@@ -35,4 +35,4 @@ WORKDIR /app
 COPY --from=build /app/out .
 
 # Start — Program.cs já binda em 0.0.0.0:$PORT
-ENTRYPOINT ["dotnet", "Spark.Api.dll"]
+ENTRYPOINT ["sh","-c","dotnet Spark.Api.dll --urls http://0.0.0.0:${PORT:-8080}"]
