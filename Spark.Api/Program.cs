@@ -1,4 +1,3 @@
-using System;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +17,6 @@ namespace Spark.Domain.Api
                 {
                     var env = hostingContext.HostingEnvironment;
                     config.Sources.Clear();
-
                     config.SetBasePath(env.ContentRootPath)
                           .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                           .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
@@ -26,10 +24,7 @@ namespace Spark.Domain.Api
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    // Render injeta PORT; fallback local = 8080
-                    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-                    webBuilder.UseUrls($"http://0.0.0.0:{port}");
-
+                    // Sem UseUrls aqui — o Docker vai passar --urls no start
                     webBuilder.UseStartup<Startup>();
                 });
     }
