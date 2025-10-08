@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Flunt" Version="1.0.4" />
+    <PackageReference Include="mercadopago-sdk" Version="2.10.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="5.0.17" />
   </ItemGroup>
