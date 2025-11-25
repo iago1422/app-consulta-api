@@ -23,7 +23,7 @@ namespace Spark.Domain.Entities
         public string Tipo { get; set; }
 
         /// <summary>
-        /// Referência externa para idempotência (ex: pagamento_id ou consulta_id).
+        /// Referência externa para idempotência (ex: pagamento_id).
         /// </summary>
         public string Referencia { get; set; }
 

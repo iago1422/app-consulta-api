@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Spark.Domain.Infra.Contexts;
@@ -10,9 +11,10 @@ using Spark.Domain.Infra.Contexts;
 namespace Spark.Infra.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251121203053_chamadas2")]
+    partial class chamadas2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -119,118 +121,6 @@ namespace Spark.Infra.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens");
-                });
-
-            modelBuilder.Entity("Spark.Domain.Entities.Anamnese", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<bool>("EstaGravida")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Fumante")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Imunossuprimido")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Medicacoes")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("OutroPreexistente")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("OutroPreexistenteDescricao")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SintomaPrincipal")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("SintomasIniciaramEm")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<bool>("TemAlergias")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemAsma")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemDiabetes")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemDiarreia")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemDoencaCardiaca")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemDoencaPulmonarCronica")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemDorDeCabeca")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemDorNoPeito")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemFaltaDeAr")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemFebre")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemHipertensao")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemLesoesNaPele")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemNausea")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemTontura")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TemTosse")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TeveContatoComDoente")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TeveTraumaRecente")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TeveViagemRecente")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TomouMedicacao")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TrabalhaEmSaude")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("UsoDeAlcool")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ViagemRecenteDescricao")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Anamneses");
                 });
 
             modelBuilder.Entity("Spark.Domain.Entities.Chamada", b =>
@@ -603,17 +493,6 @@ namespace Spark.Infra.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Spark.Domain.Entities.Anamnese", b =>
-                {
-                    b.HasOne("Spark.Domain.Entities.Usuarios.Usuario", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Spark.Domain.Entities.Chamada", b =>

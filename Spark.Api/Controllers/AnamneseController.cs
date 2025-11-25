@@ -20,13 +20,13 @@ namespace Spark.Api.Controllers
 {
     [ApiController]
     //[Authorize(Roles = "d7ccf34b-b722-4735-a1c2-a95c2b472eb1")]
-    [Route("creditos")]
-    public class CreditoController : ControllerBase
+    [Route("anamnese")]
+    public class AnamneseController : ControllerBase
     {
-        private readonly ICreditosRepository _repository; 
+        private readonly IAnamneseRepository _repository; 
         private readonly IConfiguration _configuration;
 
-        public CreditoController(ICreditosRepository repository, IConfiguration configuration)  
+        public AnamneseController(IAnamneseRepository repository, IConfiguration configuration)  
         {
             _repository = repository;
             _configuration = configuration;
@@ -35,7 +35,7 @@ namespace Spark.Api.Controllers
         [Route("get-by-id/{userid}")]
         [HttpGet]
         ///get
-        public async Task<IActionResult> GetById([FromServices] ICreditosRepository repository, [FromRoute] Guid userid)
+        public async Task<IActionResult> GetById([FromServices] IAnamneseRepository repository, [FromRoute] Guid userid)
         {
             return Ok(new { Data = repository.GetById(userid) });
         }
@@ -43,7 +43,7 @@ namespace Spark.Api.Controllers
         [Route("")]
         [HttpPost]
         ///post
-        public async Task<GenericCommandResult> Create([FromBody] CriarCreditos.Request command, [FromServices] CreditosHandler handler)
+        public async Task<GenericCommandResult> Create([FromBody] CriarAnamnese.Request command, [FromServices] AnamneseHandler handler)
         {
             return await handler.Handle(command);
         }
@@ -51,7 +51,7 @@ namespace Spark.Api.Controllers
         [Route("")]
         [HttpPut]
         ///post
-        public async Task<CriarCreditos.Response> Update([FromBody] CriarCreditos.Request command, [FromServices] ICreditosRepository repository)
+        public async Task<CriarAnamnese.Response> Update([FromBody] CriarAnamnese.Request command, [FromServices] IAnamneseRepository repository)
         {
             return await repository.Update(command);
         }

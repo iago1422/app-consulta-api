@@ -14,44 +14,44 @@ using Spark.Domain.Handlers;
 using Spark.Domain.Handlers.Imagem;
 using Spark.Domain.Repositories;
 using Microsoft.Extensions.Configuration;
-using MercadoPago.Resource.User;
 
 namespace Spark.Api.Controllers
 {
     [ApiController]
     //[Authorize(Roles = "d7ccf34b-b722-4735-a1c2-a95c2b472eb1")]
-    [Route("creditos")]
-    public class CreditoController : ControllerBase
+    [Route("ficha-clinica")]
+    public class FichaClinicaController : ControllerBase
     {
-        private readonly ICreditosRepository _repository; 
+        private readonly IFichaClinicaRepository _repository; 
         private readonly IConfiguration _configuration;
 
-        public CreditoController(ICreditosRepository repository, IConfiguration configuration)  
+        public FichaClinicaController(IFichaClinicaRepository repository, IConfiguration configuration)  
         {
             _repository = repository;
             _configuration = configuration;
         }      
      
-        [Route("get-by-id/{userid}")]
+        [Route("get-by-id/{userId}")]
         [HttpGet]
         ///get
-        public async Task<IActionResult> GetById([FromServices] ICreditosRepository repository, [FromRoute] Guid userid)
+        public async Task<IActionResult> GetById([FromServices] IFichaClinicaRepository repository, [FromRoute] Guid userId)
         {
-            return Ok(new { Data = repository.GetById(userid) });
+            return Ok(new { Data = repository.GetById(userId) });
         }
 
         [Route("")]
         [HttpPost]
         ///post
-        public async Task<GenericCommandResult> Create([FromBody] CriarCreditos.Request command, [FromServices] CreditosHandler handler)
+        public async Task<GenericCommandResult> Create([FromBody] CriarFichaClinica.Request command, [FromServices] FichaClinicaHandler handler)
         {
             return await handler.Handle(command);
         }
 
+
         [Route("")]
         [HttpPut]
         ///post
-        public async Task<CriarCreditos.Response> Update([FromBody] CriarCreditos.Request command, [FromServices] ICreditosRepository repository)
+        public async Task<CriarFichaClinica.Response> Update([FromBody] CriarFichaClinica.Request command, [FromServices] IFichaClinicaRepository repository)
         {
             return await repository.Update(command);
         }

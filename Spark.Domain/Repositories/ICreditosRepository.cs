@@ -12,5 +12,6 @@ namespace Spark.Domain.Repositories
     {
         Task<CriarCreditos.Response> Create(CriarCreditos.Request objeto);
         ContaCredito GetById(Guid id);
+        Task<CriarCreditos.Response> Update (CriarCreditos.Request objeto);
     }
 }
