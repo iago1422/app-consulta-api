@@ -17,6 +17,11 @@ namespace Spark.Domain.Infra.Contexts
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Perfil> Perfils { get; set; }
         public DbSet<Imagem> Imagens { get; set; }      
+        public DbSet<FichaClinica> FichaClinicas { get; set; }
+        public DbSet<Chamada> Chamadas { get; set; }
+        public DbSet<Conexao> Conexoes { get; set; }
+        public DbSet<Anamnese> Anamneses { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {         
             base.OnModelCreating(modelBuilder);

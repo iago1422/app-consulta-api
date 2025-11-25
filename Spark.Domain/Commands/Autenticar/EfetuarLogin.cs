@@ -11,7 +11,6 @@ namespace Spark.Domain.Commands.Autenticar
         {
             public string Email { get; set; }
             public string Senha { get; set; }
-
             public void Validate()
             {
                 AddNotifications(

@@ -75,17 +75,21 @@ namespace Spark.Domain.Api
             services.AddTransient<IPerfilRepository, PerfilRepository>();
             services.AddTransient<IImagemRepository, ImagemRepository>();
             services.AddTransient<ICreditosRepository, CreditosRepository>();
+            services.AddTransient<IAnamneseRepository, AnamneseRepository>();
+            services.AddTransient<IFichaClinicaRepository, FichaClinicaRepository>();
+
 
             services.AddTransient<ITokenService, TokenService>();        
             services.AddTransient<UsuarioHandler, UsuarioHandler>();
             services.AddTransient<ImagemHandler, ImagemHandler>();
             services.AddTransient<CreditosHandler, CreditosHandler>();
+            services.AddTransient<AnamneseHandler, AnamneseHandler>();
+            services.AddTransient<FichaClinicaHandler, FichaClinicaHandler>();
 
 
 
 
             var key = Encoding.ASCII.GetBytes(Configuration.GetSection("AuthenticationJWT:secretKey").Value);
-            Console.WriteLine("Chave: "+ Configuration.GetSection("AuthenticationJWT:secretKey").Value);
             services.AddAuthentication(x =>
             {
                 x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

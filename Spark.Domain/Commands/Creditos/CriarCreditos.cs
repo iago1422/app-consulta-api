@@ -12,7 +12,7 @@ namespace Spark.Domain.Commands
         {
             public Guid UserId { get; set; }
             public double Saldo { get; set; }
-            
+
             public void Validate()
             {
                 AddNotifications(
