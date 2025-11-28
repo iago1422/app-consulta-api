@@ -21,6 +21,9 @@ namespace Spark.Domain.Infra.Contexts
         public DbSet<Chamada> Chamadas { get; set; }
         public DbSet<Conexao> Conexoes { get; set; }
         public DbSet<Anamnese> Anamneses { get; set; }
+        public DbSet<Consulta> Consultas { get; set; }
+        public DbSet<ConsultaChatMessage> ConsultasChats { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {         
