@@ -16,12 +16,12 @@ namespace Spark.Api.Hubs
 
         public async Task SendSdpToGroup(string consultId, object payload)
         {
-            await Clients.Group(consultId).SendAsync("ReceiveSdp", payload);
+            await Clients.GroupExcept(consultId, Context.ConnectionId).SendAsync("ReceiveSdp", payload);
         }
 
         public async Task SendIceToGroup(string consultId, object payload)
         {
-            await Clients.Group(consultId).SendAsync("ReceiveIce", payload);
+            await Clients.GroupExcept(consultId, Context.ConnectionId).SendAsync("ReceiveIce", payload);
         }
 
         public async Task SendChatToGroup(string consultId, object payload)
