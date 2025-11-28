@@ -11,22 +11,21 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.IO;
 using System.Text;
+using System.Text.Json.Serialization;
+using Spark.Api.Hubs;
 using Spark.Api.Services;
+using Spark.Domain.Entities;
 using Spark.Domain.Entities.Usuarios;
 using Spark.Domain.Handlers;
+using Spark.Domain.Handlers.Imagem;
 using Spark.Domain.Infra.Contexts;
 using Spark.Domain.Infra.Repositories;
 using Spark.Domain.Infra.Repositories.Autenticar;
 using Spark.Domain.Repositories;
-using Spark.Domain.Services;
-using Spark.Infra.Repositories.Services;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Spark.Domain.Handlers.Imagem;
-using System.Text.Json.Serialization;
-using System.Text.Json;
-using Spark.Domain.Entities;
-using Spark.Infra.Repositories;
 using Spark.Domain.Repositories.Autenticar;
+using Spark.Domain.Services;
+using Spark.Infra.Repositories;
+using Spark.Infra.Repositories.Services;
 
 namespace Spark.Domain.Api
 {
@@ -42,20 +41,23 @@ namespace Spark.Domain.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-            services.AddControllers();
-            services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration.GetConnectionString("connectionString")));
+
+            // Controllers + JSON
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                });
+
+            services.AddDbContext<DataContext>(options =>
+                options.UseNpgsql(Configuration.GetConnectionString("connectionString")));
+
             services.AddHealthChecks();
 
-            services.AddControllers().AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            // SignalR
+            services.AddSignalR();
 
-
-            });
-
-            //services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-            //    .AddEntityFrameworkStores<DataContext>();            
-
+            // Identity
             services.AddIdentity<Usuario, Perfil>(options =>
             {
                 options.Password.RequireDigit = true;
@@ -68,7 +70,8 @@ namespace Spark.Domain.Api
             })
             .AddEntityFrameworkStores<DataContext>()
             .AddDefaultTokenProviders();
-     
+
+            // Repos
             services.AddTransient<IUsuarioRepository, UsuarioRepository>();
             services.AddTransient<IAutenticarRepository, AutenticarRepository>();
             services.AddTransient<IMailService, SendGridEmailService>();
@@ -78,17 +81,15 @@ namespace Spark.Domain.Api
             services.AddTransient<IAnamneseRepository, AnamneseRepository>();
             services.AddTransient<IFichaClinicaRepository, FichaClinicaRepository>();
 
-
-            services.AddTransient<ITokenService, TokenService>();        
+            // Handlers / Services
+            services.AddTransient<ITokenService, TokenService>();
             services.AddTransient<UsuarioHandler, UsuarioHandler>();
             services.AddTransient<ImagemHandler, ImagemHandler>();
             services.AddTransient<CreditosHandler, CreditosHandler>();
             services.AddTransient<AnamneseHandler, AnamneseHandler>();
             services.AddTransient<FichaClinicaHandler, FichaClinicaHandler>();
 
-
-
-
+            // Auth JWT
             var key = Encoding.ASCII.GetBytes(Configuration.GetSection("AuthenticationJWT:secretKey").Value);
             services.AddAuthentication(x =>
             {
@@ -108,25 +109,19 @@ namespace Spark.Domain.Api
                 };
             });
 
+            // Swagger
             services.AddSwaggerGen(swagger =>
             {
                 swagger.OperationFilter<SwaggerFileOperationFilter>();
                 swagger.CustomSchemaIds(s => s.FullName.Replace("+", "."));
 
-                //var xmlPath = Path.Combine(AppContext.BaseDirectory, "Spark.Api.xml");
-                //var xmlModelPath = Path.Combine(AppContext.BaseDirectory, "Spark.Domain.xml");
-
-                //swagger.IncludeXmlComments(xmlPath);
-                //swagger.IncludeXmlComments(xmlModelPath);
-
-                //This is to generate the Default UI of Swagger Documentation
                 swagger.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Version = "v1",
                     Title = "ASP.NET 6 Web API",
                     Description = "Authentication and Authorization in ASP.NET 6 with JWT and Swagger"
                 });
-                // To Enable authorization using Swagger (JWT)
+
                 swagger.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
                 {
                     Name = "Authorization",
@@ -134,21 +129,22 @@ namespace Spark.Domain.Api
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Enter ‘Bearer’ [space] and then your valid token in the text input below.\r\n\r\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\"",
+                    Description = "Enter ‘Bearer’ [space] and then your valid token.",
                 });
+
                 swagger.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
-                {
-                new OpenApiSecurityScheme
-                {
-                Reference = new OpenApiReference
-                {
-                Type = ReferenceType.SecurityScheme,
-                Id = "Bearer"
-                }
-                },
-                new string[] {}
-                }
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
                 });
             });
         }
@@ -156,9 +152,8 @@ namespace Spark.Domain.Api
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
-            {
                 app.UseDeveloperExceptionPage();
-            }
+
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1"));
 
@@ -172,7 +167,6 @@ namespace Spark.Domain.Api
             app.UseRouting();
 
             app.UseAuthentication();
-
             app.UseAuthorization();
 
             app.UseHealthChecks("/health");
@@ -180,6 +174,7 @@ namespace Spark.Domain.Api
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<ConsultHub>("/ws/consult");
             });
         }
     }
