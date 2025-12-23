@@ -23,6 +23,8 @@ namespace Spark.Domain.Infra.Contexts
         public DbSet<Anamnese> Anamneses { get; set; }
         public DbSet<Consulta> Consultas { get; set; }
         public DbSet<ConsultaChatMessage> ConsultasChats { get; set; }
+        public DbSet<FilaAtendimento> FilaAtendimento { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
