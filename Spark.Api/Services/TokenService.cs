@@ -27,9 +27,17 @@ namespace Spark.Api.Services
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.Name, user.Email.ToString()),
+                    // ID do usuário (resolve seu problema)
+                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+
+                    // dados úteis
+                    new Claim(ClaimTypes.Name, user.Email ?? string.Empty),
+                    new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+
+                    // role/perfil
                     new Claim(ClaimTypes.Role, user.PerfilId.ToString())
-                }),
+                        }),
                 Expires = DateTime.UtcNow.AddHours(2),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };

@@ -10,6 +10,7 @@ namespace Spark.Domain.Commands
     {
         public class Request : Notifiable, ICommand
         {
+            public Guid UsuarioLogadoId { get; set; }
             public Guid UserId { get; set; }
 
             // Tendências clínicas (ex: "Ansiedade", "Tabagismo", etc.)

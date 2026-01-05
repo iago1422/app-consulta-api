@@ -1,61 +1,89 @@
 using System;
-using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using Amazon.Runtime;
-using Amazon.S3.Model;
-using Amazon.S3.Util;
-using Amazon.S3;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Spark.Domain.Commands;
-using Spark.Domain.Entities;
 using Spark.Domain.Handlers;
-using Spark.Domain.Handlers.Imagem;
 using Spark.Domain.Repositories;
-using Microsoft.Extensions.Configuration;
 
 namespace Spark.Api.Controllers
 {
     [ApiController]
-    //[Authorize(Roles = "d7ccf34b-b722-4735-a1c2-a95c2b472eb1")]
+    [Authorize(Roles = "acb3830a-402b-4865-9f70-7b28d39f66ad")]
     [Route("ficha-clinica")]
     public class FichaClinicaController : ControllerBase
     {
-        private readonly IFichaClinicaRepository _repository; 
-        private readonly IConfiguration _configuration;
+        private readonly IFichaClinicaRepository _repository;
 
-        public FichaClinicaController(IFichaClinicaRepository repository, IConfiguration configuration)  
+        public FichaClinicaController(IFichaClinicaRepository repository)
         {
             _repository = repository;
-            _configuration = configuration;
-        }      
-     
-        [Route("get-by-id/{userId}")]
-        [HttpGet]
-        ///get
-        public async Task<IActionResult> GetById([FromServices] IFichaClinicaRepository repository, [FromRoute] Guid userId)
-        {
-            return Ok(new { Data = repository.GetById(userId) });
         }
 
+        private Guid GetUsuarioLogadoId()
+        {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(id) || !Guid.TryParse(id, out var userId))
+                throw new UnauthorizedAccessException("Token sem identificador do usuário.");
+
+            return userId;
+        }
+
+        [Route("get-by-paciente/{pacienteId}")]
+        [HttpGet]
+        public async Task<IActionResult> GetByPacienteId([FromRoute] Guid pacienteId)
+        {
+            var usuarioLogadoId = GetUsuarioLogadoId();
+
+            var ficha = await _repository.GetByPacienteId(pacienteId, usuarioLogadoId);
+
+            if (ficha == null)
+                return Forbid(); // sem vínculo (ou sem ficha)
+
+            return Ok(new { Data = ficha });
+        }
+
+        /// <summary>
+        /// Mantém o uso do Handler como era antes.
+        /// A única diferença: agora a controller injeta o usuarioLogadoId no command
+        /// (o handler/repository precisa usar isso para validar vínculo).
+        /// </summary>
         [Route("")]
         [HttpPost]
-        ///post
-        public async Task<GenericCommandResult> Create([FromBody] CriarFichaClinica.Request command, [FromServices] FichaClinicaHandler handler)
+        public async Task<IActionResult> Create(
+            [FromBody] CriarFichaClinica.Request command,
+            [FromServices] FichaClinicaHandler handler)
         {
-            return await handler.Handle(command);
-        }
+            var usuarioLogadoId = GetUsuarioLogadoId();
+          
+            command.UsuarioLogadoId = usuarioLogadoId;
 
+            var result = await handler.Handle(command);
+
+            // GenericCommandResult normalmente já tem Success/Message/Data
+            // aqui retorno 200 se sucesso, 400 se falha (mantém padrão REST simples)
+            if (result == null) return StatusCode(500);
+
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
 
         [Route("")]
         [HttpPut]
-        ///post
-        public async Task<CriarFichaClinica.Response> Update([FromBody] CriarFichaClinica.Request command, [FromServices] IFichaClinicaRepository repository)
+        public async Task<IActionResult> Update([FromBody] CriarFichaClinica.Request command)
         {
-            return await repository.Update(command);
+            var usuarioLogadoId = GetUsuarioLogadoId();
+
+            // mesmo esquema do POST
+            command.UsuarioLogadoId = usuarioLogadoId;
+
+            var result = await _repository.Update(command);
+
+            if (!result.Sucess)
+                return BadRequest(result);
+
+            return Ok(result);
         }
-
-
     }
 }

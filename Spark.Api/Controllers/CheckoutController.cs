@@ -23,7 +23,7 @@ using System.Text.Json;
 namespace Spark.Api.Controllers
 {
     [ApiController]
-    //[Authorize(Roles = "d7ccf34b-b722-4735-a1c2-a95c2b472eb1")]
+    [Authorize(Roles = "acb3830a-402b-4865-9f70-7b28d39f66ad")]
     [Route("checkout")]
     public class CheckoutController : ControllerBase
     {

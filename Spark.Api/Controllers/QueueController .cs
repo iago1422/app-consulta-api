@@ -6,10 +6,13 @@ using Microsoft.EntityFrameworkCore;
 using Spark.Domain.Infra.Contexts;
 using Spark.Domain.Entities;
 using Spark.Domain.Commands;
+using Microsoft.AspNetCore.Authorization;
+using System.Data;
 
 namespace Spark.Api.Controllers
 {
     [ApiController]
+    [Authorize(Roles = "acb3830a-402b-4865-9f70-7b28d39f66ad")]
     [Route("queue")]
     public class QueueController : ControllerBase
     {
