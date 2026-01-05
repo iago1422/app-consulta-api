@@ -20,7 +20,7 @@ using System.IO;
 namespace Spark.Api.Controllers.FaceInsta
 {
     [ApiController]
-    //[Authorize(Roles = "840d02b2-2607-46e3-bbfc-7f454de0aeec")]
+    [Authorize(Roles = "acb3830a-402b-4865-9f70-7b28d39f66ad")]
     [Route("aws")]
     public class AwsController : ControllerBase
     {

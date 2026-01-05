@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -22,8 +21,10 @@ namespace Spark.Domain.Infra.Repositories
         }
 
         /// <summary>
-        /// Cria ou atualiza a ficha clínica do usuário.
-        /// Se já existir ficha para o UserId, ela é atualizada.
+        /// Cria ou atualiza a ficha clínica do paciente (PacienteId).
+        /// Regras de acesso:
+        /// - Se o usuário logado for o próprio paciente -> OK
+        /// - Se existir vínculo UsuarioPacientes (ResponsavelId -> PacienteId) -> OK
         /// </summary>
         public async Task<CriarFichaClinica.Response> Create(CriarFichaClinica.Request DTO)
         {
@@ -31,13 +32,21 @@ namespace Spark.Domain.Infra.Repositories
 
             try
             {
-                // Verifica se já existe ficha clínica para esse usuário
+                // 1) valida permissão
+                var permitido = await PodeAcessarPaciente(DTO.UsuarioLogadoId, DTO.UserId);
+                if (!permitido)
+                {
+                    response.Sucess = false;
+                    response.Erro = "Acesso negado: usuário não tem vínculo com o paciente.";
+                    return response;
+                }
+
+                // 2) upsert por PacienteId
                 var ficha = await _context.FichaClinicas
                     .FirstOrDefaultAsync(x => x.UserId == DTO.UserId);
 
                 if (ficha == null)
                 {
-                    // Não existe -> cria nova
                     ficha = _mapper.Map<FichaClinica>(DTO);
                     ficha.CreatedAt = DateTime.UtcNow;
                     ficha.UpdatedAt = DateTime.UtcNow;
@@ -46,7 +55,6 @@ namespace Spark.Domain.Infra.Repositories
                 }
                 else
                 {
-                    // Já existe -> atualiza a ficha
                     _mapper.Map(DTO, ficha);
                     ficha.UpdatedAt = DateTime.UtcNow;
 
@@ -78,17 +86,22 @@ namespace Spark.Domain.Infra.Repositories
         }
 
         /// <summary>
-        /// Retorna a ficha clínica pelo UserId.
+        /// Retorna a ficha clínica pelo PacienteId.
+        /// Só retorna se o usuário logado tiver permissão.
         /// </summary>
-        public FichaClinica GetById(Guid userId)
+        public async Task<FichaClinica> GetByPacienteId(Guid pacienteId, Guid usuarioLogadoId)
         {
-            return _context
+            var permitido = await PodeAcessarPaciente(usuarioLogadoId, pacienteId);
+            if (!permitido) return null;
+
+            return await _context
                 .FichaClinicas.AsNoTracking()
-                .FirstOrDefault(x => x.UserId == userId);
+                .FirstOrDefaultAsync(x => x.UserId == pacienteId);
         }
 
         /// <summary>
-        /// Atualiza a ficha clínica existente de um usuário.
+        /// Atualiza ficha clínica existente do paciente (PacienteId).
+        /// Mantive separado pra você usar onde preferir, mas na prática o Create já faz upsert.
         /// </summary>
         public async Task<CriarFichaClinica.Response> Update(CriarFichaClinica.Request DTO)
         {
@@ -96,17 +109,24 @@ namespace Spark.Domain.Infra.Repositories
 
             try
             {
+                var permitido = await PodeAcessarPaciente(DTO.UsuarioLogadoId, DTO.UserId);
+                if (!permitido)
+                {
+                    response.Sucess = false;
+                    response.Erro = "Acesso negado: usuário não tem vínculo com o paciente.";
+                    return response;
+                }
+
                 var ficha = await _context.FichaClinicas
                     .FirstOrDefaultAsync(x => x.UserId == DTO.UserId);
 
                 if (ficha == null)
                 {
                     response.Sucess = false;
-                    response.Erro = "Ficha clínica não encontrada para este usuário.";
+                    response.Erro = "Ficha clínica não encontrada para este paciente.";
                     return response;
                 }
 
-                // Atualiza campos
                 _mapper.Map(DTO, ficha);
                 ficha.UpdatedAt = DateTime.UtcNow;
 
@@ -131,6 +151,22 @@ namespace Spark.Domain.Infra.Repositories
                 response.Erro = "Erro ao fazer update da ficha clínica. Message: " + e.Message;
                 return response;
             }
+        }
+
+        /// <summary>
+        /// Regra central de permissão:
+        /// - o próprio paciente pode acessar
+        /// - ou responsável vinculado pode acessar
+        /// </summary>
+        private async Task<bool> PodeAcessarPaciente(Guid usuarioLogadoId, Guid pacienteId)
+        {
+            // Próprio paciente
+            if (usuarioLogadoId == pacienteId)
+                return true;
+
+            // Responsável vinculado ao paciente
+            return await _context.UsuarioPacientes.AsNoTracking()
+                .AnyAsync(x => x.ResponsavelId == usuarioLogadoId && x.PacienteId == pacienteId);
         }
     }
 }

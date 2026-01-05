@@ -10,8 +10,8 @@ namespace Spark.Domain.Handlers
 {
     public class FichaClinicaHandler :
         Notifiable
-        //IHandler<CriarUsuario.Request>,
-        //IHandler<AtualizarUsuario.Request>
+    //IHandler<CriarUsuario.Request>,
+    //IHandler<AtualizarUsuario.Request>
     {
         private readonly IFichaClinicaRepository _repository;
 
@@ -36,6 +36,6 @@ namespace Spark.Domain.Handlers
             return new GenericCommandResult(response.Sucess, response.Erro, command);
         }
 
-     
-    }  
+
+    }
 }
