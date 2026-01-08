@@ -152,5 +152,33 @@ namespace Spark.Api.Controllers
 
             return Ok(new { status = "DONE" });
         }
+
+
+        // GET /queue/list?tenantId=...
+        [HttpGet("list")]
+        public async Task<IActionResult> List([FromQuery] Guid tenantId)
+        {
+            if (tenantId == Guid.Empty)
+                return BadRequest(new { Message = "tenantId é obrigatório." });
+
+            var itens = await _context.FilaAtendimento
+                .AsNoTracking()
+                .Where(x => x.TenantId == tenantId && x.Status != "DONE")
+                .OrderBy(x => x.Status == "WAITING" ? 0 : x.Status == "CALLED" ? 1 : 2)
+                .ThenBy(x => x.CreatedAt)
+                .Select(x => new
+                {
+                    id = x.Id,
+                    tenantId = x.TenantId,
+                    pacienteId = x.PacienteId,
+                    status = x.Status,
+                    createdAt = x.CreatedAt,
+                    calledAt = x.CalledAt
+                })
+                .ToListAsync();
+
+            return Ok(new { data = itens });
+        }
+
     }
 }
