@@ -21,9 +21,7 @@ namespace Spark.Domain.Repositories
         /// validando se o usuário logado pode acessá-la.
         /// </summary>
         Task<FichaClinica> GetByPacienteId(
-            Guid pacienteId,
-            Guid usuarioLogadoId
-        );
+            Guid pacienteId);
 
         /// <summary>
         /// Atualiza a ficha clínica existente do paciente,
@@ -35,5 +33,7 @@ namespace Spark.Domain.Repositories
 
 
         Task<List<FichaClinica>> getAll();
+
+        Task<FichaClinica> GetById(Guid fichaId);
     }
 }
