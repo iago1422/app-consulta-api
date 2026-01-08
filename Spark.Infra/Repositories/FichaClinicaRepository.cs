@@ -34,16 +34,7 @@ namespace Spark.Domain.Infra.Repositories
 
             try
             {
-                // 1) valida permissão
-                var permitido = await PodeAcessarPaciente(DTO.UsuarioLogadoId, DTO.UserId);
-                if (!permitido)
-                {
-                    response.Sucess = false;
-                    response.Erro = "Acesso negado: usuário não tem vínculo com o paciente.";
-                    return response;
-                }
-
-                // 2) upsert por PacienteId
+             
                 var ficha = await _context.FichaClinicas
                     .FirstOrDefaultAsync(x => x.UserId == DTO.UserId);
 
@@ -91,11 +82,8 @@ namespace Spark.Domain.Infra.Repositories
         /// Retorna a ficha clínica pelo PacienteId.
         /// Só retorna se o usuário logado tiver permissão.
         /// </summary>
-        public async Task<FichaClinica> GetByPacienteId(Guid pacienteId, Guid usuarioLogadoId)
+        public async Task<FichaClinica> GetByPacienteId(Guid pacienteId)
         {
-            var permitido = await PodeAcessarPaciente(usuarioLogadoId, pacienteId);
-            if (!permitido) return null;
-
             return await _context
                 .FichaClinicas.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.UserId == pacienteId);
@@ -111,13 +99,6 @@ namespace Spark.Domain.Infra.Repositories
 
             try
             {
-                var permitido = await PodeAcessarPaciente(DTO.UsuarioLogadoId, DTO.UserId);
-                if (!permitido)
-                {
-                    response.Sucess = false;
-                    response.Erro = "Acesso negado: usuário não tem vínculo com o paciente.";
-                    return response;
-                }
 
                 var ficha = await _context.FichaClinicas
                     .FirstOrDefaultAsync(x => x.UserId == DTO.UserId);
@@ -155,22 +136,6 @@ namespace Spark.Domain.Infra.Repositories
             }
         }
 
-        /// <summary>
-        /// Regra central de permissão:
-        /// - o próprio paciente pode acessar
-        /// - ou responsável vinculado pode acessar
-        /// </summary>
-        private async Task<bool> PodeAcessarPaciente(Guid usuarioLogadoId, Guid pacienteId)
-        {
-            // Próprio paciente
-            if (usuarioLogadoId == pacienteId)
-                return true;
-
-            // Responsável vinculado ao paciente
-            return await _context.UsuarioPacientes.AsNoTracking()
-                .AnyAsync(x => x.ResponsavelId == usuarioLogadoId && x.PacienteId == pacienteId);
-        }
-
         public async Task<List<FichaClinica>> getAll()
         {
             // 2) fichas desses pacientes
@@ -180,6 +145,13 @@ namespace Spark.Domain.Infra.Repositories
                 .ToListAsync();
 
             return fichas;
+        }
+
+        public async Task<FichaClinica> GetById(Guid fichaId)
+        {
+            return await _context
+                .FichaClinicas.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == fichaId);
         }
 
     }

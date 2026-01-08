@@ -35,12 +35,10 @@ namespace Spark.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetByPacienteId([FromRoute] Guid pacienteId)
         {
-            var usuarioLogadoId = GetUsuarioLogadoId();
-
-            var ficha = await _repository.GetByPacienteId(pacienteId, usuarioLogadoId);
+            var ficha = await _repository.GetByPacienteId(pacienteId);
 
             if (ficha == null)
-                return Forbid(); // sem vínculo (ou sem ficha)
+                return BadRequest("Sem vinculo ou sem ficha."); // sem vínculo (ou sem ficha)
 
             return Ok(new { Data = ficha });
         }
@@ -55,11 +53,7 @@ namespace Spark.Api.Controllers
         public async Task<IActionResult> Create(
             [FromBody] CriarFichaClinica.Request command,
             [FromServices] FichaClinicaHandler handler)
-        {
-            var usuarioLogadoId = GetUsuarioLogadoId();
-          
-            command.UsuarioLogadoId = usuarioLogadoId;
-
+        {          
             var result = await handler.Handle(command);
 
             // GenericCommandResult normalmente já tem Success/Message/Data
@@ -91,6 +85,20 @@ namespace Spark.Api.Controllers
         {
             var result = await _repository.getAll();
             return Ok(new { Data = result });
+        }
+
+
+        [Route("get-by-id/{fichaId}")]
+        [HttpGet]
+        public async Task<IActionResult> GetById([FromRoute] Guid fichaId)
+        {
+
+            var ficha = await _repository.GetById(fichaId);
+
+            if (ficha == null)
+                return BadRequest("Sem vinculo ou sem ficha."); // sem vínculo (ou sem ficha)
+
+            return Ok(new { Data = ficha });
         }
 
     }
