@@ -20,7 +20,7 @@ namespace Spark.Domain.Repositories
         /// Retorna a ficha clínica pelo PacienteId,
         /// validando se o usuário logado pode acessá-la.
         /// </summary>
-        Task<FichaClinica> GetByPacienteId(
+        Task<List<FichaClinica>> GetByPacienteId(
             Guid pacienteId);
 
         /// <summary>

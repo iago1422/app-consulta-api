@@ -33,26 +33,12 @@ namespace Spark.Domain.Infra.Repositories
             var response = new CriarFichaClinica.Response();
 
             try
-            {
-             
-                var ficha = await _context.FichaClinicas
-                    .FirstOrDefaultAsync(x => x.UserId == DTO.UserId);
+            { 
+                var ficha = _mapper.Map<FichaClinica>(DTO);
+                ficha.CreatedAt = DateTime.UtcNow;
+                ficha.UpdatedAt = DateTime.UtcNow;
 
-                if (ficha == null)
-                {
-                    ficha = _mapper.Map<FichaClinica>(DTO);
-                    ficha.CreatedAt = DateTime.UtcNow;
-                    ficha.UpdatedAt = DateTime.UtcNow;
-
-                    await _context.FichaClinicas.AddAsync(ficha);
-                }
-                else
-                {
-                    _mapper.Map(DTO, ficha);
-                    ficha.UpdatedAt = DateTime.UtcNow;
-
-                    _context.FichaClinicas.Update(ficha);
-                }
+                await _context.FichaClinicas.AddAsync(ficha);
 
                 var linhas = await _context.SaveChangesAsync();
 
@@ -82,11 +68,12 @@ namespace Spark.Domain.Infra.Repositories
         /// Retorna a ficha clínica pelo PacienteId.
         /// Só retorna se o usuário logado tiver permissão.
         /// </summary>
-        public async Task<FichaClinica> GetByPacienteId(Guid pacienteId)
+        public async Task<List<FichaClinica>> GetByPacienteId(Guid pacienteId)
         {
-            return await _context
-                .FichaClinicas.AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == pacienteId);
+            return  await _context.FichaClinicas
+            .AsNoTracking()
+            .Where(x => x.UserId == pacienteId)
+            .ToListAsync();
         }
 
         /// <summary>
