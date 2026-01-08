@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -168,5 +170,17 @@ namespace Spark.Domain.Infra.Repositories
             return await _context.UsuarioPacientes.AsNoTracking()
                 .AnyAsync(x => x.ResponsavelId == usuarioLogadoId && x.PacienteId == pacienteId);
         }
+
+        public async Task<List<FichaClinica>> getAll()
+        {
+            // 2) fichas desses pacientes
+            var fichas = await _context.FichaClinicas
+                .AsNoTracking()
+                .OrderByDescending(x => x.UpdatedAt)
+                .ToListAsync();
+
+            return fichas;
+        }
+
     }
 }

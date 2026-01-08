@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Spark.Domain.Commands;
 using Spark.Domain.Entities;
@@ -31,5 +32,8 @@ namespace Spark.Domain.Repositories
         Task<CriarFichaClinica.Response> Update(
             CriarFichaClinica.Request objeto
         );
+
+
+        Task<List<FichaClinica>> getAll();
     }
 }

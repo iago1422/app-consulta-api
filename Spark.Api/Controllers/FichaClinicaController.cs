@@ -85,5 +85,13 @@ namespace Spark.Api.Controllers
 
             return Ok(result);
         }
+        [Route("")]
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var result = await _repository.getAll();
+            return Ok(new { Data = result });
+        }
+
     }
 }

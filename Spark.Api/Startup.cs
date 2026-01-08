@@ -175,11 +175,14 @@ namespace Spark.Domain.Api
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseHealthChecks("/health");
-
             app.UseEndpoints(endpoints =>
             {
+                // Healthcheck como endpoint e anônimo
+                endpoints.MapHealthChecks("/health").AllowAnonymous();
+
                 endpoints.MapControllers();
+
+                // SignalR
                 endpoints.MapHub<ConsultHub>("/ws/consult");
             });
         }
