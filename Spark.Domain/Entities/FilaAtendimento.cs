@@ -8,7 +8,8 @@ namespace Spark.Domain.Entities
     {
         public Guid Id { get; set; }
         public Guid TenantId { get; set; }
-        public Guid PacienteId { get; set; }
+        public Guid AnamnseId { get; set; }
+        public Guid FichaId { get; set; }
 
         public string Status { get; set; } = "WAITING"; // WAITING | CALLED | DONE
 

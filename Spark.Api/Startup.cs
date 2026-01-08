@@ -80,7 +80,6 @@ namespace Spark.Domain.Api
             services.AddTransient<ICreditosRepository, CreditosRepository>();
             services.AddTransient<IAnamneseRepository, AnamneseRepository>();
             services.AddTransient<IFichaClinicaRepository, FichaClinicaRepository>();
-            services.AddTransient<ICriarVinculoPacienteRepository, CriarVinculoPacienteRepository>();
 
             // Handlers / Services
             services.AddTransient<ITokenService, TokenService>();
@@ -89,7 +88,6 @@ namespace Spark.Domain.Api
             services.AddTransient<CreditosHandler, CreditosHandler>();
             services.AddTransient<AnamneseHandler, AnamneseHandler>();
             services.AddTransient<FichaClinicaHandler, FichaClinicaHandler>();
-            services.AddTransient<UsuarioPacienteHandler, UsuarioPacienteHandler>();
 
             // Auth JWT
             var key = Encoding.ASCII.GetBytes(Configuration.GetSection("AuthenticationJWT:secretKey").Value);

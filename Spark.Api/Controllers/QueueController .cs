@@ -8,6 +8,7 @@ using Spark.Domain.Entities;
 using Spark.Domain.Commands;
 using Microsoft.AspNetCore.Authorization;
 using System.Data;
+using Spark.Infra.Migrations;
 
 namespace Spark.Api.Controllers
 {
@@ -31,14 +32,15 @@ namespace Spark.Api.Controllers
         [HttpPost("join")]
         public async Task<IActionResult> Join([FromBody] JoinQueueRequest.Request request)
         {
-            if (request == null || request.TenantId == Guid.Empty || request.PacienteId == Guid.Empty)
-                return BadRequest(new { Message = "TenantId e PacienteId são obrigatórios." });
+            if (request == null || request.TenantId == Guid.Empty || request.FichaId == Guid.Empty || request.AnamneseId == Guid.Empty)
+                return BadRequest(new { Message = "TenantI,  FichaId e AnamneseId são obrigatórios." });
 
             var entity = new FilaAtendimento
             {
                 Id = Guid.NewGuid(), // ou deixa o banco gerar se você colocou defaultValueSql
                 TenantId = request.TenantId,
-                PacienteId = request.PacienteId,
+                FichaId = request.FichaId,
+                AnamnseId = request.AnamneseId,
                 Status = "WAITING",
                 CreatedAt = DateTime.UtcNow
             };
@@ -170,7 +172,8 @@ namespace Spark.Api.Controllers
                 {
                     id = x.Id,
                     tenantId = x.TenantId,
-                    pacienteId = x.PacienteId,
+                    anamneseId = x.AnamnseId,
+                    fichaId = x.FichaId,
                     status = x.Status,
                     createdAt = x.CreatedAt,
                     calledAt = x.CalledAt

@@ -11,14 +11,16 @@ namespace Spark.Domain.Commands
         public class Request : Notifiable, ICommand
         {
             public Guid TenantId { get; set; }
-            public Guid PacienteId { get; set; }
+            public Guid AnamneseId { get; set; }
+            public Guid FichaId { get; set; }
 
             public void Validate()
             {
                 var contract = new Contract()
                     .Requires()
                     .IsNotNull(TenantId, "TenantId", "Não pode ser vazio ou nulo. ")
-                    .IsNotNull(PacienteId, "PacienteId", "Não pode ser vazio ou nulo. ");                                    
+                    .IsNotNull(AnamneseId, "AnamneseId", "Não pode ser vazio ou nulo. ")                                  
+                    .IsNotNull(FichaId, "AnamneseId", "Não pode ser vazio ou nulo. ");                                    
             
                 AddNotifications(contract);
             }
