@@ -1,24 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Amazon.Runtime;
-using Amazon.S3.Model;
-using Amazon.S3.Util;
-using Amazon.S3;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Spark.Domain.Commands;
-using Spark.Domain.Entities;
-using Spark.Domain.Handlers;
-using Spark.Domain.Handlers.Imagem;
-using Spark.Domain.Repositories;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MercadoPago.Client.Preference;
-using MercadoPago.Client.Payment;
-using MercadoPago.Resource.Payment;
-using System.IO;
-using System.Text.Json;
 
 namespace Spark.Api.Controllers
 {
@@ -27,114 +13,109 @@ namespace Spark.Api.Controllers
     [Route("checkout")]
     public class CheckoutController : ControllerBase
     {
+        private readonly ILogger<CheckoutController> _logger;
 
+        public CheckoutController(ILogger<CheckoutController> logger)
+        {
+            _logger = logger;
+        }
+
+        // POST /checkout/create
         [HttpPost("create")]
         public async Task<IActionResult> CreatePreference([FromBody] CreateOrderDto dto)
         {
+            _logger.LogInformation("[MP] CreatePreference chamado");
+
+            if (dto == null)
+            {
+                _logger.LogWarning("[MP] DTO nulo");
+                return BadRequest(new { Message = "Body inválido." });
+            }
+
+            if (dto.UserId == Guid.Empty || dto.Creditos <= 0)
+            {
+                _logger.LogWarning("[MP] Dados inválidos. UserId={UserId} Creditos={Creditos}", dto.UserId, dto.Creditos);
+                return BadRequest(new { Message = "UserId e Creditos são obrigatórios." });
+            }
+
+            if (dto.UnitPrice <= 0)
+            {
+                _logger.LogWarning("[MP] UnitPrice inválido. UnitPrice={UnitPrice}", dto.UnitPrice);
+                return BadRequest(new { Message = "UnitPrice deve ser maior que zero." });
+            }
+
             var client = new PreferenceClient();
+
+            // ExternalReference em formato fácil de parsear no webhook
+            // Ex: uid:GUID|cred:50|ord:ABC123
+            var externalReference = $"uid:{dto.UserId}|cred:{dto.Creditos}|ord:{dto.OrderId}";
+
+            _logger.LogInformation("[MP] Criando preference. OrderId={OrderId} UserId={UserId} Creditos={Creditos} ExternalReference={ExternalReference}",
+                dto.OrderId, dto.UserId, dto.Creditos, externalReference);
 
             var request = new PreferenceRequest
             {
-                Items = new List<PreferenceItemRequest> {
-                new PreferenceItemRequest {
-                    Title = dto.Title ?? "Pedido",
-                    Quantity = dto.Quantity <= 0 ? 1 : dto.Quantity,
-                    UnitPrice = dto.UnitPrice <= 0 ? 1 : dto.UnitPrice,
-                    CurrencyId = "BRL"
-                }
-            },
-                ExternalReference = dto.OrderId, // id do seu pedido
+                Items = new List<PreferenceItemRequest>
+                {
+                    new PreferenceItemRequest
+                    {
+                        Title = string.IsNullOrWhiteSpace(dto.Title) ? "Pedido" : dto.Title,
+                        Quantity = dto.Quantity <= 0 ? 1 : dto.Quantity,
+                        UnitPrice = dto.UnitPrice,
+                        CurrencyId = "BRL"
+                    }
+                },
+
+                ExternalReference = externalReference,
+
+                // Metadados recomendados: o Payment tende a carregar isso e facilita sua vida no webhook
+                Metadata = new Dictionary<string, object>
+                {
+                    ["userId"] = dto.UserId.ToString(),
+                    ["creditos"] = dto.Creditos.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    ["orderId"] = dto.OrderId ?? string.Empty
+                },
+
                 BackUrls = new PreferenceBackUrlsRequest
                 {
                     Success = "myapp://checkout/success",
                     Failure = "myapp://checkout/failure",
                     Pending = "myapp://checkout/pending"
                 },
+
                 AutoReturn = "approved",
-                NotificationUrl = "http://localhost:8080/api/webhooks/mercadopago"
+
+                NotificationUrl = "https://yong-segregational-zahra.ngrok-free.dev/api/webhooks/mercadopago"
             };
 
-            var pref = await client.CreateAsync(request);
-            return Ok(new
+            try
             {
-                preferenceId = pref.Id,
-                initPoint = pref.InitPoint,             // URL para abrir o checkout
-                sandboxInitPoint = pref.SandboxInitPoint
-            });
-        }
+                var pref = await client.CreateAsync(request);
 
-        [Route("api/webhooks/mercadopago")]
-        public class WebhooksController : ControllerBase
-        {
-            // idempotência simples: evite reprocessar o mesmo evento
-            private static readonly HashSet<string> _processed = new();
+                _logger.LogInformation("[MP] Preference criada com sucesso. PreferenceId={PreferenceId} InitPoint={InitPoint}",
+                    pref.Id, pref.InitPoint);
 
-            [HttpPost]
-            public async Task<IActionResult> Receive()
+                return Ok(new
+                {
+                    preferenceId = pref.Id,
+                    initPoint = pref.InitPoint,
+                    sandboxInitPoint = pref.SandboxInitPoint
+                });
+            }
+            catch (Exception ex)
             {
-                using var reader = new StreamReader(Request.Body);
-                var body = await reader.ReadToEndAsync();
-
-                // MP às vezes manda querystring também: ?type=payment&id=123
-                var qsType = Request.Query["type"].ToString();
-                var qsId = Request.Query["id"].ToString();
-
-                string? topic = null;
-                string? id = null;
-
-                if (!string.IsNullOrWhiteSpace(qsType) && !string.IsNullOrWhiteSpace(qsId))
-                {
-                    topic = qsType;
-                    id = qsId;
-                }
-                else
-                {
-                    using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(body) ? "{}" : body);
-                    var root = doc.RootElement;
-
-                    if (root.TryGetProperty("type", out var typeProp))
-                        topic = typeProp.GetString();
-
-                    // novo formato: { "data": { "id": "###" }, "action": "payment.updated" }
-                    if (root.TryGetProperty("data", out var data) && data.TryGetProperty("id", out var dataId))
-                        id = dataId.GetString();
-
-                    // formato legado: { "id": "###" }
-                    if (string.IsNullOrWhiteSpace(id) && root.TryGetProperty("id", out var idProp))
-                        id = idProp.GetString();
-                }
-
-                if (string.IsNullOrWhiteSpace(topic) || string.IsNullOrWhiteSpace(id))
-                    return Ok(); // sempre 200 rápido
-
-                var uniqueKey = $"{topic}:{id}";
-                if (!_processed.Add(uniqueKey))
-                    return Ok(); // já processado
-
-                // ---- Fonte da verdade: consultar API ----
-                if (topic.Equals("payment", StringComparison.OrdinalIgnoreCase))
-                {
-                    var payClient = new PaymentClient();
-                    Payment payment = await payClient.GetAsync(Convert.ToInt64(id));
-
-                    // Ex.: approved / pending / rejected
-                    var status = payment.Status; // string
-                    var externalRef = payment.ExternalReference; // mapeia pro seu pedido
-
-                    // TODO: atualizar seu pedido no banco conforme status (approved/pending/rejected)
-                    // TODO: log/observabilidade
-                }
-                else if (topic.Equals("merchant_order", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Se quiser, trate merchant_order (somar pagamentos, etc.)
-                    // var moClient = new MerchantOrderClient();
-                    // var mo = await moClient.GetAsync(long.Parse(id));
-                }
-
-                return Ok();
+                _logger.LogError(ex, "[MP] Erro ao criar preference");
+                return StatusCode(500, new { Message = "Erro ao criar preferência no Mercado Pago." });
             }
         }
     }
 
-    public record CreateOrderDto(string OrderId, string Title, int Quantity, decimal UnitPrice);
+    public record CreateOrderDto(
+        string OrderId,
+        string Title,
+        int Quantity,
+        decimal UnitPrice,
+        Guid UserId,
+        decimal Creditos
+    );
 }
