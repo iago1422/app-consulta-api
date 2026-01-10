@@ -70,7 +70,7 @@ namespace Spark.Domain.Infra.Repositories
                 {
                     // Ajusta esses campos conforme tua entidade:
                     UserId = conta.UserId,                      
-                    Referencia = string.Empty, // se tiver no DTO
+                    Referencia = DTO.Referencia, // se tiver no DTO
                     Tipo = "COMPRA",
                     Valor = DTO.Saldo                    
                 };
@@ -144,7 +144,7 @@ namespace Spark.Domain.Infra.Repositories
                     UserId = conta.UserId,
                     Tipo = "USO",  // Ex.: "USO"
                     Valor = DTO.Saldo,            // valor movimentado (não o saldo total!)
-                    Referencia = ""
+                    Referencia = DTO.Referencia
                 };
 
                 await _context.MovimentacoesCredito.AddAsync(movimentacao);
