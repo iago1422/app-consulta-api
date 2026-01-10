@@ -85,7 +85,7 @@ namespace Spark.Api.Controllers
 
                 AutoReturn = "approved",
 
-                NotificationUrl = "https://yong-segregational-zahra.ngrok-free.dev/api/webhooks/mercadopago"
+                NotificationUrl = "https://app-consulta-api.onrender.com/api/webhooks/mercadopago"
             };
 
             try
