@@ -69,19 +69,9 @@ namespace Spark.Domain.Commands
                         "Sexo não pode ser vazio ou nulo."
                     )
                     .IsNotNullOrEmpty(
-                        Endereco,
-                        nameof(Endereco),
-                        "Endereço não pode ser vazio ou nulo."
-                    )
-                    .IsNotNullOrEmpty(
-                        ContatoEmergenciaNome,
-                        nameof(ContatoEmergenciaNome),
-                        "Nome do contato de emergência não pode ser vazio ou nulo."
-                    )
-                    .IsNotNullOrEmpty(
-                        ContatoEmergenciaTelefone,
-                        nameof(ContatoEmergenciaTelefone),
-                        "Telefone do contato de emergência não pode ser vazio ou nulo."
+                        CPF,
+                        nameof(CPF),
+                        "CPF não pode ser vazio ou nulo."
                     );
 
                 // Validação simples de CPF (opcional, só se vier preenchido)
@@ -89,13 +79,7 @@ namespace Spark.Domain.Commands
                 {
                     contract.HasMinLen(CPF, 11, nameof(CPF), "CPF deve ter pelo menos 11 caracteres.")
                             .HasMaxLen(CPF, 14, nameof(CPF), "CPF não deve exceder 14 caracteres (com máscara).");
-                }
-
-               
-                if (Telefones == null || Telefones.Count == 0)
-                {
-                    contract.AddNotification(nameof(Telefones), "Informe pelo menos um telefone de contato.");
-                }
+                }              
 
                 AddNotifications(contract);
             }
