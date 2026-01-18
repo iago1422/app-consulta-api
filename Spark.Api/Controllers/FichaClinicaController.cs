@@ -10,7 +10,7 @@ using Spark.Domain.Repositories;
 namespace Spark.Api.Controllers
 {
     [ApiController]
-    [Authorize(Roles = "acb3830a-402b-4865-9f70-7b28d39f66ad")]
+    [Authorize(Roles = "acb3830a-402b-4865-9f70-7b28d39f66ad,efe703c2-2076-4d5b-aa04-aaee90953e49,e0e938ef-5ca3-48bc-b5a5-30a0fd0b64ca")]
     [Route("ficha-clinica")]
     public class FichaClinicaController : ControllerBase
     {
@@ -50,17 +50,11 @@ namespace Spark.Api.Controllers
         /// </summary>
         [Route("")]
         [HttpPost]
-        public async Task<IActionResult> Create(
+        public async Task<GenericCommandResult> Create(
             [FromBody] CriarFichaClinica.Request command,
             [FromServices] FichaClinicaHandler handler)
         {          
-            var result = await handler.Handle(command);
-
-            // GenericCommandResult normalmente já tem Success/Message/Data
-            // aqui retorno 200 se sucesso, 400 se falha (mantém padrão REST simples)
-            if (result == null) return StatusCode(500);
-
-            return result.Success ? Ok(result) : BadRequest(result);
+           return  await handler.Handle(command);          
         }
 
         [Route("")]

@@ -50,7 +50,7 @@ namespace Spark.Domain.Infra.Repositories
                 
                 if (emailExist != null)
                 {
-                    response.Sucess = true;
+                    response.Sucess = false;
                     response.Mensagem = "Esse email já está cadastrado!";
 
                     return response;
@@ -75,15 +75,15 @@ namespace Spark.Domain.Infra.Repositories
 
                 if (result.Succeeded)
                 {
-                    var confirmEmailToken = await _userManager.GenerateEmailConfirmationTokenAsync(entidade);
+                    //var confirmEmailToken = await _userManager.GenerateEmailConfirmationTokenAsync(entidade);
 
-                    var encodedEmailToken = Encoding.UTF8.GetBytes(confirmEmailToken);
-                    var validEmailToken = WebEncoders.Base64UrlEncode(encodedEmailToken);
+                    //var encodedEmailToken = Encoding.UTF8.GetBytes(confirmEmailToken);
+                    //var validEmailToken = WebEncoders.Base64UrlEncode(encodedEmailToken);
 
-                    string url = $"{_configuration["AppUrl"]}/autenticar/confirmaremail?userid={entidade.Id}&token={validEmailToken}"; //TODO: CRIAR ROTA NO FRONT COM TELA BONITA
+                    //string url = $"{_configuration["AppUrl"]}/autenticar/confirmaremail?userid={entidade.Id}&token={validEmailToken}"; //TODO: CRIAR ROTA NO FRONT COM TELA BONITA
 
-                    await _mailService.SendEmailAsync(entidade.Email, "Confime seu email", "Confime seu email", $"<h1> Confirmação de email</h1>" +
-                        $"<p>Por favor confirme seu email clicando no link -> <a href='{url}'>Clique AQUI</a></p>");
+                    //await _mailService.SendEmailAsync(entidade.Email, "Confime seu email", "Confime seu email", $"<h1> Confirmação de email</h1>" +
+                    //    $"<p>Por favor confirme seu email clicando no link -> <a href='{url}'>Clique AQUI</a></p>");
 
                     response.Sucess = result.Succeeded;
                     response.Mensagem = "Usuario criado com sucesso!";

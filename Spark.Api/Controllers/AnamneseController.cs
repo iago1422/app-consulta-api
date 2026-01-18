@@ -19,7 +19,7 @@ using MercadoPago.Resource.User;
 namespace Spark.Api.Controllers
 {
     [ApiController]
-    [Authorize(Roles = "acb3830a-402b-4865-9f70-7b28d39f66ad")]
+    [Authorize(Roles = "acb3830a-402b-4865-9f70-7b28d39f66ad,efe703c2-2076-4d5b-aa04-aaee90953e49,e0e938ef-5ca3-48bc-b5a5-30a0fd0b64ca")]
     [Route("anamnese")]
     public class AnamneseController : ControllerBase
     {

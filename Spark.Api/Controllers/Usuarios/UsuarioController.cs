@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Spark.Api.Controllers.Usuarios
 {
     [ApiController]
-    //[Authorize(Roles = "840d02b2-2607-46e3-bbfc-7f454de0aeec")]
+    [Authorize(Roles = "acb3830a-402b-4865-9f70-7b28d39f66ad,efe703c2-2076-4d5b-aa04-aaee90953e49,e0e938ef-5ca3-48bc-b5a5-30a0fd0b64ca")]
     [Route("usuarios")]
     public class UsuarioController : Controller
     {
@@ -34,6 +34,7 @@ namespace Spark.Api.Controllers.Usuarios
 
 
         [Route("")]
+        [AllowAnonymous]
         [HttpPost]
         ///post
         public async Task<GenericCommandResult> Create([FromBody] CriarUsuario.Request command, [FromServices]UsuarioHandler handler)
