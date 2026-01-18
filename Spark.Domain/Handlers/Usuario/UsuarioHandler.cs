@@ -33,7 +33,7 @@ namespace Spark.Domain.Handlers
                 return new GenericCommandResult(response.Sucess, response.Mensagem, command);
             }
 
-            return new GenericCommandResult(response.Sucess, response.Erro, command);
+            return new GenericCommandResult(response.Sucess, response.Mensagem, command);
         }
 
         public async Task<GenericCommandResult> Handle(AtualizarUsuario.Request command)
