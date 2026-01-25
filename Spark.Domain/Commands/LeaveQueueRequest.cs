@@ -6,20 +6,18 @@ using Spark.Domain.Commands.Contracts;
 
 namespace Spark.Domain.Commands
 {
-    public class JoinQueueRequest
+    public class LeaveQueueRequest
     {
         public class Request : Notifiable, ICommand
         {
             public Guid TenantId { get; set; }
             public Guid AnamneseId { get; set; }
             public Guid FichaId { get; set; }
-            public string Tipo { get; set; }
 
             public void Validate()
             {
                 var contract = new Contract()
                     .Requires()
-                    .IsNotNullOrEmpty(Tipo, "Tipo", "Não pode ser vazio ou nulo.")
                     .IsNotNull(TenantId, "TenantId", "Não pode ser vazio ou nulo. ")
                     .IsNotNull(AnamneseId, "AnamneseId", "Não pode ser vazio ou nulo. ")                                  
                     .IsNotNull(FichaId, "AnamneseId", "Não pode ser vazio ou nulo. ");                                    

@@ -12,5 +12,7 @@ namespace Spark.Domain.Repositories
         Task<AtualizarUsuario.Response> Update(AtualizarUsuario.Request usuario);
         Usuario GetById(Guid id);
         List<Usuario> GetAll();
+        Task<DeletarUsuario.Response> Delete(DeletarUsuario.Request usuario);
+
     }
 }

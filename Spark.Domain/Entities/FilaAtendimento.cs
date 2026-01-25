@@ -11,9 +11,12 @@ namespace Spark.Domain.Entities
         public Guid AnamnseId { get; set; }
         public Guid FichaId { get; set; }
 
+        public string Tipo { get; set; } = "VIDEO"; // VIDEO, CHAT, VOICE
+
         public string Status { get; set; } = "WAITING"; // WAITING | CALLED | DONE
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
         public DateTime? CalledAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

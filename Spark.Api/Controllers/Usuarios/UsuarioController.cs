@@ -50,5 +50,13 @@ namespace Spark.Api.Controllers.Usuarios
             return await handler.Handle(command);
         }
 
+        [Route("")]
+        [HttpDelete]
+        ///post
+        public async Task<GenericCommandResult> Delete([FromBody] DeletarUsuario.Request command, [FromServices] UsuarioHandler handler)
+        {
+            return await handler.Handle(command);
+        }
+
     }
 }

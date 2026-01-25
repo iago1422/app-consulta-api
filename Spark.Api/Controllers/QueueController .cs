@@ -9,6 +9,7 @@ using Spark.Domain.Commands;
 using Microsoft.AspNetCore.Authorization;
 using System.Data;
 using Spark.Infra.Migrations;
+using static Amazon.S3.Util.S3EventNotification;
 
 namespace Spark.Api.Controllers
 {
@@ -41,6 +42,7 @@ namespace Spark.Api.Controllers
                 TenantId = request.TenantId,
                 FichaId = request.FichaId,
                 AnamnseId = request.AnamneseId,
+                Tipo = request.Tipo,
                 Status = "WAITING",
                 CreatedAt = DateTime.UtcNow
             };
@@ -63,6 +65,53 @@ namespace Spark.Api.Controllers
                 queueId = entity.Id,
                 status = entity.Status
             });
+        }
+
+        // POST /queue/leave
+        [HttpPost("leave")]
+        public async Task<IActionResult> Leave([FromBody] LeaveQueueRequest.Request request)
+        {
+            try
+            {
+                if (request == null || request.TenantId == Guid.Empty || request.FichaId == Guid.Empty || request.AnamneseId == Guid.Empty)
+                    return BadRequest(new { Message = "TenantId, FichaId e AnamneseId são obrigatórios." });
+
+                // Busca o registro ativo do paciente na fila
+                var entity = await _context.FilaAtendimento
+                    .Where(x => x.TenantId == request.TenantId
+                             && x.FichaId == request.FichaId
+                             && x.AnamnseId == request.AnamneseId
+                             && (x.Status == "WAITING" || x.Status == "CALLED"))
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (entity == null)
+                    return NotFound(new { Message = "Paciente não está na fila (WAITING/CALLED)." });
+
+                entity.Status = "LEFT";
+                entity.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    Sucess = true,
+                    Message = "Você saiu da fila.",
+                    Data = new
+                    {
+                        queueId = entity.Id,
+                        status = entity.Status
+                    }
+                });
+            } catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Sucess = false,
+                    Message = "Erro ao tentar sair da fila."
+                });
+            }
+           
         }
 
         // GET /queue/{id}/position
