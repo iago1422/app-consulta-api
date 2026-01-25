@@ -159,5 +159,43 @@ namespace Spark.Domain.Infra.Repositories
 
             return response;
         }
+
+        public async Task<DeletarUsuario.Response> Delete(DeletarUsuario.Request DTO)
+        {
+            var response = new DeletarUsuario.Response();
+
+            try
+            {
+                var usuario = await _userManager.FindByIdAsync(DTO.Id.ToString());
+
+                if (usuario == null)
+                {
+                    response.Sucess = false;
+                    response.Mensagem = "Usuário não encontrado!";
+                    return response;
+                }
+
+                var result = await _userManager.DeleteAsync(usuario);
+
+                if (result.Succeeded)
+                {
+                    response.Sucess = true;
+                    response.Mensagem = "Usuário excluído com sucesso!";
+                    return response;
+                }
+
+                response.Sucess = false;
+                response.Erro = "Erro ao tentar excluir usuário.";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Sucess = false;
+                response.Mensagem = "Erro ao tentar excluir usuário!";
+                response.Erro = ex.ToString();
+                return response;
+            }
+        }
+
     }
 }

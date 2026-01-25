@@ -51,5 +51,21 @@ namespace Spark.Domain.Handlers
 
             return new GenericCommandResult(response.Sucess, response.Erro, command);
         }
+
+        public async Task<GenericCommandResult> Handle(DeletarUsuario.Request command)
+        {
+            command.Validate();
+            if (command.Invalid)
+                return new GenericCommandResult(false, "Ops, parece que seu usuario está incorreto!", command.Notifications);
+
+            var response = await _repository.Delete(command);
+
+            if (response.Sucess)
+            {
+                return new GenericCommandResult(response.Sucess, response.Mensagem, command);
+            }
+
+            return new GenericCommandResult(response.Sucess, response.Mensagem, command);
+        }
     }  
 }
