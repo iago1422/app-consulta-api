@@ -61,7 +61,7 @@ namespace Spark.Infra.Workers
                 }
 
                 // roda de 1 em 1 minuto (ajuste como quiser)
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
             }
 
             _logger.LogInformation("FilaAutoDoneWorker finalizado.");
