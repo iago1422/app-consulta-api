@@ -26,6 +26,7 @@ using Spark.Domain.Repositories.Autenticar;
 using Spark.Domain.Services;
 using Spark.Infra.Repositories;
 using Spark.Infra.Repositories.Services;
+using Spark.Infra.Workers;
 
 namespace Spark.Domain.Api
 {
@@ -108,6 +109,9 @@ namespace Spark.Domain.Api
                     ValidateAudience = false
                 };
             });
+
+            // Workers
+            services.AddHostedService<FilaAutoDoneWorker>();
 
             // Swagger
             services.AddSwaggerGen(swagger =>

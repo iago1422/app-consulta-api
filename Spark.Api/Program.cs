@@ -39,10 +39,6 @@ namespace Spark.Api // garanta que é o Program do Spark.Api (o que vira Spark.Ap
 
             // Log pra confirmar em runtime
             var addrs = host.Services.GetService(typeof(IServerAddressesFeature)) as IServerAddressesFeature;
-            Console.WriteLine($">>> PORT={Environment.GetEnvironmentVariable("PORT")}");
-            Console.WriteLine(">>> ADDRESSES: " + string.Join(", ", addrs?.Addresses ?? Array.Empty<string>()));
-            Console.WriteLine(">>> MP: AccessToken configurado? " + (!string.IsNullOrWhiteSpace(accessToken)));
-
             host.Run();
         }
 
