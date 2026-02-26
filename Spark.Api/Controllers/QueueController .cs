@@ -225,7 +225,8 @@ namespace Spark.Api.Controllers
                     fichaId = x.FichaId,
                     status = x.Status,
                     createdAt = x.CreatedAt,
-                    calledAt = x.CalledAt
+                    calledAt = x.CalledAt,
+                    tipo = x.Tipo
                 })
                 .ToListAsync();
 
