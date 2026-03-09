@@ -1,13 +1,9 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Amazon.Runtime;
-using Amazon.S3;
-using Amazon.S3.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Spark.Domain.Commands;
 
 namespace Spark.Api.Controllers
@@ -17,8 +13,7 @@ namespace Spark.Api.Controllers
     [Route("chat")]
     public class ChatFileUploadController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
-        private const long MaxFileSize = 25 * 1024 * 1024; // 25MB
+        private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
 
         private static readonly string[] AllowedExtensions = new[]
         {
@@ -30,25 +25,20 @@ namespace Spark.Api.Controllers
             ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt"
         };
 
-        public ChatFileUploadController(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
         /// <summary>
         /// Upload de arquivo para o chat da consulta.
-        /// Aceita imagens, videos e documentos (max 25MB).
-        /// Retorna a URL publica do arquivo no S3.
+        /// Recebe o arquivo, converte para base64 em memoria e retorna a data URL.
+        /// Nenhum arquivo e persistido - apenas transito em memoria.
         /// </summary>
         [HttpPost("upload")]
-        [RequestSizeLimit(26_214_400)] // ~25MB + overhead
+        [RequestSizeLimit(11_534_336)] // ~11MB (10MB + overhead do multipart)
         public async Task<IActionResult> UploadChatFile(IFormFile file, [FromForm] string fileName, [FromForm] string mimeType)
         {
             if (file == null || file.Length == 0)
                 return BadRequest(new { Message = "Nenhum arquivo enviado." });
 
             if (file.Length > MaxFileSize)
-                return BadRequest(new { Message = "Arquivo muito grande. Tamanho maximo: 25MB." });
+                return BadRequest(new { Message = "Arquivo muito grande. Tamanho maximo: 10MB." });
 
             var originalName = fileName ?? file.FileName;
             var extension = Path.GetExtension(originalName)?.ToLowerInvariant();
@@ -58,67 +48,33 @@ namespace Spark.Api.Controllers
 
             try
             {
-                var awsKeyID = _configuration["CongifAws:KeyID"];
-                var awsKeySecret = _configuration["CongifAws:SecretKey"];
-                var bucketName = _configuration["CongifAws:Bucket"];
-                var awsCredentials = new BasicAWSCredentials(awsKeyID, awsKeySecret);
+                var contentType = mimeType ?? file.ContentType ?? "application/octet-stream";
 
-                var config = new AmazonS3Config
+                // Ler o arquivo em memoria e converter para base64
+                byte[] fileBytes;
+                using (var memoryStream = new MemoryStream())
                 {
-                    RegionEndpoint = Amazon.RegionEndpoint.USEast1
-                };
+                    await file.CopyToAsync(memoryStream);
+                    fileBytes = memoryStream.ToArray();
+                }
 
-                using var client = new AmazonS3Client(awsCredentials, config);
-
-                // Gerar chave unica no S3: chat-files/{ano}/{mes}/{guid}{ext}
-                var now = DateTime.UtcNow;
-                var s3Key = $"chat-files/{now:yyyy}/{now:MM}/{Guid.NewGuid()}{extension}";
-
-                using var stream = file.OpenReadStream();
-
-                var putRequest = new PutObjectRequest
-                {
-                    BucketName = bucketName,
-                    Key = s3Key,
-                    InputStream = stream,
-                    ContentType = mimeType ?? file.ContentType ?? "application/octet-stream",
-                    AutoCloseStream = false,
-                };
-
-                var response = await client.PutObjectAsync(putRequest);
-
-                if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
-                    return StatusCode(500, new { Message = "Falha ao enviar arquivo para o S3." });
-
-                // Gerar URL pre-assinada com validade de 24h
-                var preSignedRequest = new GetPreSignedUrlRequest
-                {
-                    BucketName = bucketName,
-                    Key = s3Key,
-                    Expires = DateTime.UtcNow.AddHours(24),
-                };
-
-                var fileUrl = client.GetPreSignedURL(preSignedRequest);
+                var base64String = Convert.ToBase64String(fileBytes);
+                var dataUrl = $"data:{contentType};base64,{base64String}";
 
                 var result = new ChatFileUploadResponse
                 {
-                    Url = fileUrl,
+                    Url = dataUrl,
                     FileName = originalName,
                     FileSize = file.Length,
-                    MimeType = mimeType ?? file.ContentType ?? "application/octet-stream",
+                    MimeType = contentType,
                 };
 
                 return Ok(result);
             }
-            catch (AmazonS3Exception ex)
-            {
-                Console.WriteLine($"[CHAT-UPLOAD] Erro S3: {ex.Message}");
-                return StatusCode(500, new { Message = $"Erro no armazenamento: {ex.Message}" });
-            }
             catch (Exception ex)
             {
                 Console.WriteLine($"[CHAT-UPLOAD] Erro: {ex.Message}");
-                return StatusCode(500, new { Message = $"Erro interno: {ex.Message}" });
+                return StatusCode(500, new { Message = $"Erro ao processar arquivo: {ex.Message}" });
             }
         }
     }
