@@ -36,7 +36,7 @@ namespace Spark.Infra.Workers
 
                     // Regra: LEFT + CalledAt <= agora - 1h => DONE
                     var pendentes = await context.FilaAtendimento
-                        .Where(x => x.Status == "WAITING" && x.CreatedAt <= limit)
+                        .Where(x => x.Status == "WAITING" || x.Status == "CALLED" || x.Status == "LEFT" && x.CreatedAt <= limit)
                         .ToListAsync(stoppingToken);
 
                     if (pendentes.Count > 0)
