@@ -44,6 +44,11 @@ namespace Spark.Domain.Commands
     {
         public Guid UserId { get; set; }
         public string Message { get; set; }
+        public string FileUrl { get; set; }
+        public string FileName { get; set; }
+        public long? FileSize { get; set; }
+        public string MimeType { get; set; }
+        public string FileType { get; set; } // "TEXT", "IMAGE", "VIDEO", "FILE"
     }
 
     public class ChatMessageResponse
@@ -51,5 +56,18 @@ namespace Spark.Domain.Commands
         public Guid UserId { get; set; }
         public string Message { get; set; }
         public DateTime SentAt { get; set; }
+        public string FileUrl { get; set; }
+        public string FileName { get; set; }
+        public long? FileSize { get; set; }
+        public string MimeType { get; set; }
+        public string FileType { get; set; }
+    }
+
+    public class ChatFileUploadResponse
+    {
+        public string Url { get; set; }
+        public string FileName { get; set; }
+        public long FileSize { get; set; }
+        public string MimeType { get; set; }
     }
 }

@@ -70,7 +70,7 @@ namespace Spark.Api.Controllers
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (consult == null)
-                return NotFound(new { Message = "Consulta não encontrada" });
+                return NotFound(new { Message = "Consulta nï¿½o encontrada" });
 
             var dto = new ConsultDto
             {
@@ -89,7 +89,7 @@ namespace Spark.Api.Controllers
         {
             var consult = await _context.Consultas.FindAsync(id);
             if (consult == null)
-                return NotFound(new { Message = "Consulta não encontrada" });
+                return NotFound(new { Message = "Consulta nï¿½o encontrada" });
 
             var payload = new
             {
@@ -99,7 +99,7 @@ namespace Spark.Api.Controllers
                 sdp = request.Sdp
             };
 
-            // envia para todos do grupo (médico + paciente)
+            // envia para todos do grupo (mï¿½dico + paciente)
             await _hubContext.Clients.Group(id.ToString())
                 .SendAsync("ReceiveSdp", payload);
 
@@ -112,7 +112,7 @@ namespace Spark.Api.Controllers
         {
             var consult = await _context.Consultas.FindAsync(id);
             if (consult == null)
-                return NotFound(new { Message = "Consulta não encontrada" });
+                return NotFound(new { Message = "Consulta nï¿½o encontrada" });
 
             var payload = new
             {
@@ -133,13 +133,18 @@ namespace Spark.Api.Controllers
         {
             var consult = await _context.Consultas.FindAsync(id);
             if (consult == null)
-                return NotFound(new { Message = "Consulta não encontrada" });
+                return NotFound(new { Message = "Consulta nï¿½o encontrada" });
 
             var msgEntity = new ConsultaChatMessage
             {
                 UsuarioId = request.UserId,
                 Message = request.Message,
-                SentAt = DateTime.UtcNow
+                SentAt = DateTime.UtcNow,
+                FileUrl = request.FileUrl,
+                FileName = request.FileName,
+                FileSize = request.FileSize,
+                MimeType = request.MimeType,
+                FileType = request.FileType ?? "TEXT"
             };
 
             _context.ConsultasChats.Add(msgEntity);
@@ -149,7 +154,12 @@ namespace Spark.Api.Controllers
             {
                 UserId = msgEntity.UsuarioId,
                 Message = msgEntity.Message,
-                SentAt = msgEntity.SentAt
+                SentAt = msgEntity.SentAt,
+                FileUrl = msgEntity.FileUrl,
+                FileName = msgEntity.FileName,
+                FileSize = msgEntity.FileSize,
+                MimeType = msgEntity.MimeType,
+                FileType = msgEntity.FileType
             };
 
             await _hubContext.Clients.Group(id.ToString())
@@ -158,7 +168,12 @@ namespace Spark.Api.Controllers
                     consultId = id,
                     response.UserId,
                     response.Message,
-                    response.SentAt
+                    response.SentAt,
+                    response.FileUrl,
+                    response.FileName,
+                    response.FileSize,
+                    response.MimeType,
+                    response.FileType
                 });
 
             return Ok(new { Message = "Mensagem enviada", Data = response });
@@ -170,7 +185,7 @@ namespace Spark.Api.Controllers
         {
             var consult = await _context.Consultas.FindAsync(id);
             if (consult == null)
-                return NotFound(new { Message = "Consulta não encontrada" });
+                return NotFound(new { Message = "Consulta nï¿½o encontrada" });
 
             var messages = await _context.ConsultasChats
                 .AsNoTracking()
@@ -182,7 +197,12 @@ namespace Spark.Api.Controllers
             {
                 UserId = m.UsuarioId,
                 Message = m.Message,
-                SentAt = m.SentAt
+                SentAt = m.SentAt,
+                FileUrl = m.FileUrl,
+                FileName = m.FileName,
+                FileSize = m.FileSize,
+                MimeType = m.MimeType,
+                FileType = m.FileType
             });
 
             return Ok(response);
