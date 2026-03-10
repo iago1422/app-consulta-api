@@ -55,8 +55,11 @@ namespace Spark.Domain.Api
 
             services.AddHealthChecks();
 
-            // SignalR
-            services.AddSignalR();
+            // SignalR (limite aumentado para suportar envio de arquivos base64 pelo chat)
+            services.AddSignalR(options =>
+            {
+                options.MaximumReceiveMessageSize = 15 * 1024 * 1024; // 15MB
+            });
 
             // Identity
             services.AddIdentity<Usuario, Perfil>(options =>
@@ -133,7 +136,7 @@ namespace Spark.Domain.Api
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Enter ‘Bearer’ [space] and then your valid token.",
+                    Description = "Enter ï¿½Bearerï¿½ [space] and then your valid token.",
                 });
 
                 swagger.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -179,7 +182,7 @@ namespace Spark.Domain.Api
 
             app.UseEndpoints(endpoints =>
             {
-                // Healthcheck como endpoint e anônimo
+                // Healthcheck como endpoint e anï¿½nimo
                 endpoints.MapHealthChecks("/health").AllowAnonymous();
 
                 endpoints.MapControllers();
