@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
-using SendGrid;
-using SendGrid.Helpers.Mail;
 using System;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Spark.Infra.Repositories.Services
@@ -10,50 +11,55 @@ namespace Spark.Infra.Repositories.Services
     {
         Task SendEmailAsync(string fromEmail, string toEmail, string plainTextContent, string htmlContent);
     }
-    public class SendGridEmailService : IMailService
+
+    public class ResendEmailService : IMailService
     {
         private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
 
-        public SendGridEmailService(IConfiguration configuration)
+        public ResendEmailService(IConfiguration configuration)
         {
             _configuration = configuration;
+            _httpClient = new HttpClient();
         }
-
 
         public async Task SendEmailAsync(string fromEmail, string toEmail, string plainTextContent, string htmlContent)
         {
-            var subject = "Convite de Projeto";
-            var apiKey = _configuration["SendGridAPIKey"];
-            var client = new SendGridClient(apiKey);
+            var subject = "IConsulta";
+            var apiKey = _configuration["ResendApiKey"];
 
-            var from = new EmailAddress(fromEmail);
-            var to = new EmailAddress(toEmail);
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+            request.Headers.Add("Authorization", $"Bearer {apiKey}");
 
-            var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
-
-            // Desativando o rastreamento de cliques
-            msg.TrackingSettings = new TrackingSettings
+            var body = new
             {
-                ClickTracking = new ClickTracking
-                {
-                    Enable = false,     // Desativa rastreamento de links no HTML
-                    EnableText = false  // Desativa rastreamento de links no texto simples
-                }
+                from = fromEmail,
+                to = new[] { toEmail },
+                subject,
+                text = plainTextContent,
+                html = htmlContent
             };
+
+            request.Content = new StringContent(
+                JsonSerializer.Serialize(body),
+                Encoding.UTF8,
+                "application/json"
+            );
 
             try
             {
-                var response = await client.SendEmailAsync(msg);
-                Console.WriteLine($"Status Code: {response.StatusCode}");
-                var responseBody = await response.Body.ReadAsStringAsync();
+                var response = await _httpClient.SendAsync(request);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine($"Status Code: {(int)response.StatusCode}");
                 Console.WriteLine($"Response Body: {responseBody}");
+
+                response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Erro ao enviar e-mail: {ex.Message}");
             }
         }
-
-
     }
 }
