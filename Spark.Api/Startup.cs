@@ -78,7 +78,7 @@ namespace Spark.Domain.Api
             // Repos
             services.AddTransient<IUsuarioRepository, UsuarioRepository>();
             services.AddTransient<IAutenticarRepository, AutenticarRepository>();
-            services.AddTransient<IMailService, SendGridEmailService>();
+            services.AddTransient<IMailService, ResendEmailService>();
             services.AddTransient<IPerfilRepository, PerfilRepository>();
             services.AddTransient<IImagemRepository, ImagemRepository>();
             services.AddTransient<ICreditosRepository, CreditosRepository>();
