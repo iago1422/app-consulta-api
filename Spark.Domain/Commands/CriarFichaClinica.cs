@@ -16,6 +16,9 @@ namespace Spark.Domain.Commands
             // Tendências clínicas (ex: "Ansiedade", "Tabagismo", etc.)
             public List<string> Tendencias { get; set; } = new();
 
+            public List<string> HistoricoMedico { get; set; } = new();
+
+
             // Dados básicos do paciente
             public string NomeCompleto { get; set; }
             public DateTime? DataNascimento { get; set; }
