@@ -26,7 +26,7 @@ namespace Spark.Api.Controllers
             var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrWhiteSpace(id) || !Guid.TryParse(id, out var userId))
-                throw new UnauthorizedAccessException("Token sem identificador do usuário.");
+                throw new UnauthorizedAccessException("Token sem identificador do usuï¿½rio.");
 
             return userId;
         }
@@ -38,15 +38,15 @@ namespace Spark.Api.Controllers
             var ficha = await _repository.GetByPacienteId(pacienteId);
 
             if (ficha == null)
-                return BadRequest("Sem vinculo ou sem ficha."); // sem vínculo (ou sem ficha)
+                return BadRequest("Sem vinculo ou sem ficha."); // sem vï¿½nculo (ou sem ficha)
 
             return Ok(new { Data = ficha });
         }
 
         /// <summary>
-        /// Mantém o uso do Handler como era antes.
-        /// A única diferença: agora a controller injeta o usuarioLogadoId no command
-        /// (o handler/repository precisa usar isso para validar vínculo).
+        /// Mantï¿½m o uso do Handler como era antes.
+        /// A ï¿½nica diferenï¿½a: agora a controller injeta o usuarioLogadoId no command
+        /// (o handler/repository precisa usar isso para validar vï¿½nculo).
         /// </summary>
         [Route("")]
         [HttpPost]
@@ -82,6 +82,32 @@ namespace Spark.Api.Controllers
         }
 
 
+        [Route("update-by-id/{fichaId}")]
+        [HttpPut]
+        public async Task<IActionResult> UpdateById([FromRoute] Guid fichaId, [FromBody] CriarFichaClinica.Request command)
+        {
+            command.UsuarioLogadoId = GetUsuarioLogadoId();
+
+            var result = await _repository.UpdateById(fichaId, command);
+
+            if (!result.Sucess)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [Route("{fichaId}")]
+        [HttpDelete]
+        public async Task<IActionResult> DeleteById([FromRoute] Guid fichaId)
+        {
+            var result = await _repository.DeleteById(fichaId);
+
+            if (!result.Sucess)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
         [Route("get-by-id/{fichaId}")]
         [HttpGet]
         public async Task<IActionResult> GetById([FromRoute] Guid fichaId)
@@ -90,7 +116,7 @@ namespace Spark.Api.Controllers
             var ficha = await _repository.GetById(fichaId);
 
             if (ficha == null)
-                return BadRequest("Sem vinculo ou sem ficha."); // sem vínculo (ou sem ficha)
+                return BadRequest("Sem vinculo ou sem ficha."); // sem vï¿½nculo (ou sem ficha)
 
             return Ok(new { Data = ficha });
         }
