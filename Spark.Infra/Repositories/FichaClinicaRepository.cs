@@ -23,10 +23,10 @@ namespace Spark.Domain.Infra.Repositories
         }
 
         /// <summary>
-        /// Cria ou atualiza a ficha clínica do paciente (PacienteId).
+        /// Cria ou atualiza a ficha clï¿½nica do paciente (PacienteId).
         /// Regras de acesso:
-        /// - Se o usuário logado for o próprio paciente -> OK
-        /// - Se existir vínculo UsuarioPacientes (ResponsavelId -> PacienteId) -> OK
+        /// - Se o usuï¿½rio logado for o prï¿½prio paciente -> OK
+        /// - Se existir vï¿½nculo UsuarioPacientes (ResponsavelId -> PacienteId) -> OK
         /// </summary>
         public async Task<CriarFichaClinica.Response> Create(CriarFichaClinica.Request DTO)
         {
@@ -45,28 +45,28 @@ namespace Spark.Domain.Infra.Repositories
                 if (linhas <= 0)
                 {
                     response.Sucess = false;
-                    response.Erro = "Nenhuma linha afetada ao salvar ficha clínica.";
+                    response.Erro = "Nenhuma linha afetada ao salvar ficha clï¿½nica.";
                     return response;
                 }
 
                 response.Sucess = true;
                 response.Id = ficha.Id;
-                response.Mensagem = "Ficha clínica salva com sucesso.";
+                response.Mensagem = "Ficha clï¿½nica salva com sucesso.";
                 return response;
             }
             catch (Exception e)
             {
-                Console.WriteLine("Erro ao salvar ficha clínica. Message:'{0}'", e.Message);
+                Console.WriteLine("Erro ao salvar ficha clï¿½nica. Message:'{0}'", e.Message);
 
                 response.Sucess = false;
-                response.Erro = "Erro ao salvar ficha clínica. Message: " + e.Message;
+                response.Erro = "Erro ao salvar ficha clï¿½nica. Message: " + e.Message;
                 return response;
             }
         }
 
         /// <summary>
-        /// Retorna a ficha clínica pelo PacienteId.
-        /// Só retorna se o usuário logado tiver permissão.
+        /// Retorna a ficha clï¿½nica pelo PacienteId.
+        /// Sï¿½ retorna se o usuï¿½rio logado tiver permissï¿½o.
         /// </summary>
         public async Task<List<FichaClinica>> GetByPacienteId(Guid pacienteId)
         {
@@ -77,8 +77,8 @@ namespace Spark.Domain.Infra.Repositories
         }
 
         /// <summary>
-        /// Atualiza ficha clínica existente do paciente (PacienteId).
-        /// Mantive separado pra você usar onde preferir, mas na prática o Create já faz upsert.
+        /// Atualiza ficha clï¿½nica existente do paciente (PacienteId).
+        /// Mantive separado pra vocï¿½ usar onde preferir, mas na prï¿½tica o Create jï¿½ faz upsert.
         /// </summary>
         public async Task<CriarFichaClinica.Response> Update(CriarFichaClinica.Request DTO)
         {
@@ -93,7 +93,7 @@ namespace Spark.Domain.Infra.Repositories
                 if (ficha == null)
                 {
                     response.Sucess = false;
-                    response.Erro = "Ficha clínica não encontrada para este paciente.";
+                    response.Erro = "Ficha clï¿½nica nï¿½o encontrada para este paciente.";
                     return response;
                 }
 
@@ -106,19 +106,19 @@ namespace Spark.Domain.Infra.Repositories
                 if (linhas <= 0)
                 {
                     response.Sucess = false;
-                    response.Erro = "Nenhuma linha afetada ao atualizar ficha clínica.";
+                    response.Erro = "Nenhuma linha afetada ao atualizar ficha clï¿½nica.";
                     return response;
                 }
 
                 response.Sucess = true;
                 response.Id = ficha.Id;
-                response.Mensagem = "Ficha clínica atualizada com sucesso.";
+                response.Mensagem = "Ficha clï¿½nica atualizada com sucesso.";
                 return response;
             }
             catch (Exception e)
             {
                 response.Sucess = false;
-                response.Erro = "Erro ao fazer update da ficha clínica. Message: " + e.Message;
+                response.Erro = "Erro ao fazer update da ficha clï¿½nica. Message: " + e.Message;
                 return response;
             }
         }
@@ -139,6 +139,87 @@ namespace Spark.Domain.Infra.Repositories
             return await _context
                 .FichaClinicas.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == fichaId);
+        }
+
+        public async Task<CriarFichaClinica.Response> UpdateById(Guid fichaId, CriarFichaClinica.Request DTO)
+        {
+            var response = new CriarFichaClinica.Response();
+
+            try
+            {
+                var ficha = await _context.FichaClinicas
+                    .FirstOrDefaultAsync(x => x.Id == fichaId);
+
+                if (ficha == null)
+                {
+                    response.Sucess = false;
+                    response.Erro = "Ficha clÃ­nica nÃ£o encontrada para o ID informado.";
+                    return response;
+                }
+
+                _mapper.Map(DTO, ficha);
+                ficha.UpdatedAt = DateTime.UtcNow;
+
+                _context.FichaClinicas.Update(ficha);
+
+                var linhas = await _context.SaveChangesAsync();
+                if (linhas <= 0)
+                {
+                    response.Sucess = false;
+                    response.Erro = "Nenhuma linha afetada ao atualizar ficha clÃ­nica.";
+                    return response;
+                }
+
+                response.Sucess = true;
+                response.Id = ficha.Id;
+                response.Mensagem = "Ficha clÃ­nica atualizada com sucesso.";
+                return response;
+            }
+            catch (Exception e)
+            {
+                response.Sucess = false;
+                response.Erro = "Erro ao fazer update da ficha clÃ­nica. Message: " + e.Message;
+                return response;
+            }
+        }
+
+        public async Task<CriarFichaClinica.Response> DeleteById(Guid fichaId)
+        {
+            var response = new CriarFichaClinica.Response();
+
+            try
+            {
+                var ficha = await _context.FichaClinicas
+                    .FirstOrDefaultAsync(x => x.Id == fichaId);
+
+                if (ficha == null)
+                {
+                    response.Sucess = false;
+                    response.Erro = "Ficha clÃ­nica nÃ£o encontrada para o ID informado.";
+                    return response;
+                }
+
+                _context.FichaClinicas.Remove(ficha);
+
+                var linhas = await _context.SaveChangesAsync();
+                if (linhas <= 0)
+                {
+                    response.Sucess = false;
+                    response.Erro = "Nenhuma linha afetada ao deletar ficha clÃ­nica.";
+                    return response;
+                }
+
+                response.Sucess = true;
+                response.Id = ficha.Id;
+                response.Mensagem = "Ficha clÃ­nica deletada com sucesso.";
+                return response;
+            }
+            catch (Exception e)
+            {
+                response.Sucess = false;
+                response.Erro = "Erro ao deletar ficha clÃ­nica. Message: " + e.Message;
+                return response;
+            }
         }
 
     }

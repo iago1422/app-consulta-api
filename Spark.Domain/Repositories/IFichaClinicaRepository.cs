@@ -9,23 +9,23 @@ namespace Spark.Domain.Repositories
     public interface IFichaClinicaRepository
     {
         /// <summary>
-        /// Cria ou atualiza a ficha clínica do paciente.
-        /// O acesso é validado com base no usuário logado (paciente ou responsável).
+        /// Cria ou atualiza a ficha clï¿½nica do paciente.
+        /// O acesso ï¿½ validado com base no usuï¿½rio logado (paciente ou responsï¿½vel).
         /// </summary>
         Task<CriarFichaClinica.Response> Create(
             CriarFichaClinica.Request objeto
         );
 
         /// <summary>
-        /// Retorna a ficha clínica pelo PacienteId,
-        /// validando se o usuário logado pode acessá-la.
+        /// Retorna a ficha clï¿½nica pelo PacienteId,
+        /// validando se o usuï¿½rio logado pode acessï¿½-la.
         /// </summary>
         Task<List<FichaClinica>> GetByPacienteId(
             Guid pacienteId);
 
         /// <summary>
-        /// Atualiza a ficha clínica existente do paciente,
-        /// validando vínculo ou acesso direto.
+        /// Atualiza a ficha clï¿½nica existente do paciente,
+        /// validando vï¿½nculo ou acesso direto.
         /// </summary>
         Task<CriarFichaClinica.Response> Update(
             CriarFichaClinica.Request objeto
@@ -35,5 +35,12 @@ namespace Spark.Domain.Repositories
         Task<List<FichaClinica>> getAll();
 
         Task<FichaClinica> GetById(Guid fichaId);
+
+        Task<CriarFichaClinica.Response> UpdateById(
+            Guid fichaId,
+            CriarFichaClinica.Request objeto
+        );
+
+        Task<CriarFichaClinica.Response> DeleteById(Guid fichaId);
     }
 }
