@@ -156,8 +156,22 @@ namespace Spark.Domain.Infra.Repositories
                     response.Erro = "Ficha clínica não encontrada para o ID informado.";
                     return response;
                 }
-
-                _mapper.Map(DTO, ficha);
+                ficha.Tendencias = DTO.Tendencias ?? ficha.Tendencias;
+                ficha.NomeCompleto = DTO.NomeCompleto ?? ficha.NomeCompleto;
+                ficha.DataNascimento = DTO.DataNascimento ?? ficha.DataNascimento;
+                ficha.Sexo = DTO.Sexo ?? ficha.Sexo;
+                ficha.CPF = DTO.CPF ?? ficha.CPF;
+                ficha.CartaoSUS = DTO.CartaoSUS ?? ficha.CartaoSUS;
+                ficha.Endereco = DTO.Endereco ?? ficha.Endereco;
+                ficha.Telefones = DTO.Telefones ?? ficha.Telefones;
+                ficha.ContatoEmergenciaNome = DTO.ContatoEmergenciaNome ?? ficha.ContatoEmergenciaNome;
+                ficha.ContatoEmergenciaTelefone = DTO.ContatoEmergenciaTelefone ?? ficha.ContatoEmergenciaTelefone;
+                ficha.ContatoEmergenciaRelacao = DTO.ContatoEmergenciaRelacao ?? ficha.ContatoEmergenciaRelacao;
+                ficha.Alergias = DTO.Alergias ?? ficha.Alergias;
+                ficha.DoencasCronicas = DTO.DoencasCronicas ?? ficha.DoencasCronicas;
+                ficha.HistoricoCirurgico = DTO.HistoricoCirurgico ?? ficha.HistoricoCirurgico;
+                ficha.MedicacoesUsoContinuo = DTO.MedicacoesUsoContinuo ?? ficha.MedicacoesUsoContinuo;
+                ficha.HistoricoFamiliar = DTO.HistoricoFamiliar ?? ficha.HistoricoFamiliar;
                 ficha.UpdatedAt = DateTime.UtcNow;
 
                 _context.FichaClinicas.Update(ficha);
