@@ -18,6 +18,12 @@ namespace Spark.Domain.Entities
         /// </summary>
         public List<string> Tendencias { get; set; } = new();
 
+
+        /// <summary>
+        /// Histórico médico 
+        /// </summary>
+        public List<string> HistoricoMedico { get; set; } = new();
+
         /// <summary>
         /// Nome completo do paciente.
         /// </summary>
