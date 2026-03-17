@@ -173,6 +173,7 @@ namespace Spark.Domain.Infra.Repositories
                 ficha.MedicacoesUsoContinuo = DTO.MedicacoesUsoContinuo ?? ficha.MedicacoesUsoContinuo;
                 ficha.HistoricoFamiliar = DTO.HistoricoFamiliar ?? ficha.HistoricoFamiliar;
                 ficha.UpdatedAt = DateTime.UtcNow;
+                ficha.HistoricoMedico = DTO.HistoricoMedico ?? ficha.HistoricoMedico;
 
                 _context.FichaClinicas.Update(ficha);
 
