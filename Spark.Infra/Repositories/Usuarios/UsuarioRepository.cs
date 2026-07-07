@@ -13,6 +13,7 @@ using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.Extensions.Logging;
 using Spark.Infra.Repositories.Services;
 
 namespace Spark.Domain.Infra.Repositories
@@ -25,9 +26,10 @@ namespace Spark.Domain.Infra.Repositories
         private IConfiguration _configuration;
         private IMailService _mailService;
         private readonly IPerfilRepository _perfilRepository;
+        private readonly ILogger<UsuarioRepository> _logger;
 
         public UsuarioRepository(DataContext context, IMapper mapper, UserManager<Usuario> userManager, IMailService mailService, IConfiguration configuration,
-            IPerfilRepository perfilRepository)
+            IPerfilRepository perfilRepository, ILogger<UsuarioRepository> logger)
         {
             _context = context;
             _mapper = mapper;
@@ -35,6 +37,7 @@ namespace Spark.Domain.Infra.Repositories
             _mailService = mailService;
             _configuration = configuration;
             _perfilRepository = perfilRepository;
+            _logger = logger;
         }
 
         public async Task<CriarUsuario.Response> Create(CriarUsuario.Request DTO)
@@ -51,25 +54,29 @@ namespace Spark.Domain.Infra.Repositories
                 if (emailExist != null)
                 {
                     response.Sucess = false;
-                    response.Mensagem = "Esse email já está cadastrado!";
+                    response.Mensagem = "Esse email jï¿½ estï¿½ cadastrado!";
 
                     return response;
                 }                     
 
                 var perfils = await _perfilRepository.GetAll(0, 25);
-                
-                foreach(var perfil in perfils)
+                var perfilEncontrado = perfils.FirstOrDefault(p =>
+                    string.Equals(DTO.Perfil?.Trim(), p.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (perfilEncontrado == null)
                 {
-                    if (DTO.Perfil == perfil.Name)
-                    {
-                        requestBanco.PerfilId = perfil.Id;
-                        requestBanco.Nome = DTO.Nome;
-                        requestBanco.Senha = DTO.Senha;
-                        requestBanco.Email = DTO.Email;
-                        requestBanco.Cpf = DTO.Cpf;
-                        requestBanco.Imagem = DTO.Imagem;
-                    }
+                    response.Sucess = false;
+                    response.Mensagem = "Perfil informado nÃ£o Ã© vÃ¡lido.";
+                    return response;
                 }
+
+                requestBanco.PerfilId = perfilEncontrado.Id;
+                requestBanco.Nome = DTO.Nome;
+                requestBanco.Senha = DTO.Senha;
+                requestBanco.Email = DTO.Email;
+                requestBanco.Cpf = DTO.Cpf;
+                requestBanco.Imagem = DTO.Imagem;
+
                 var entidade = _mapper.Map<Usuario>(requestBanco);
                 var result = await _userManager.CreateAsync(entidade, DTO.Senha);
 
@@ -82,7 +89,7 @@ namespace Spark.Domain.Infra.Repositories
 
                     //string url = $"{_configuration["AppUrl"]}/autenticar/confirmaremail?userid={entidade.Id}&token={validEmailToken}"; //TODO: CRIAR ROTA NO FRONT COM TELA BONITA
 
-                    //await _mailService.SendEmailAsync(entidade.Email, "Confime seu email", "Confime seu email", $"<h1> Confirmação de email</h1>" +
+                    //await _mailService.SendEmailAsync(entidade.Email, "Confime seu email", "Confime seu email", $"<h1> Confirmaï¿½ï¿½o de email</h1>" +
                     //    $"<p>Por favor confirme seu email clicando no link -> <a href='{url}'>Clique AQUI</a></p>");
 
                     response.Sucess = result.Succeeded;
@@ -93,14 +100,15 @@ namespace Spark.Domain.Infra.Repositories
                 if(!result.Succeeded)
                 {
                     response.Sucess = false;
+                    response.Mensagem = string.Join(" ", result.Errors.Select(e => e.Description));
                     response.Erro = "Erro ao tentar criar usuario.";
                     return response;
                 }
             }
             catch(Exception ex)
             {
+                _logger.LogError(ex, "Erro ao tentar criar usuario");
                 response.Mensagem = "Erro ao tentar criar usuario!";
-                response.Erro = ex.ToString();
             }
             return response;
 
@@ -171,7 +179,7 @@ namespace Spark.Domain.Infra.Repositories
                 if (usuario == null)
                 {
                     response.Sucess = false;
-                    response.Mensagem = "Usuário não encontrado!";
+                    response.Mensagem = "Usuï¿½rio nï¿½o encontrado!";
                     return response;
                 }
 
@@ -180,18 +188,18 @@ namespace Spark.Domain.Infra.Repositories
                 if (result.Succeeded)
                 {
                     response.Sucess = true;
-                    response.Mensagem = "Usuário excluído com sucesso!";
+                    response.Mensagem = "Usuï¿½rio excluï¿½do com sucesso!";
                     return response;
                 }
 
                 response.Sucess = false;
-                response.Erro = "Erro ao tentar excluir usuário.";
+                response.Erro = "Erro ao tentar excluir usuï¿½rio.";
                 return response;
             }
             catch (Exception ex)
             {
                 response.Sucess = false;
-                response.Mensagem = "Erro ao tentar excluir usuário!";
+                response.Mensagem = "Erro ao tentar excluir usuï¿½rio!";
                 response.Erro = ex.ToString();
                 return response;
             }
