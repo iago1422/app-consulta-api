@@ -25,7 +25,6 @@ namespace Spark.Domain.Commands.Autenticar
 
         public class Response {
             public string Email { get; set; }
-            public string Token { get; set; }
         }
     }
 }

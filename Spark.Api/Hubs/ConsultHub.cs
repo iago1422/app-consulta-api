@@ -28,5 +28,18 @@ namespace Spark.Api.Hubs
         {
             await Clients.Group(consultId).SendAsync("ReceiveChatMessage", payload);
         }
+
+        // Indicador de "digitando" no chat (repassa só para o outro peer)
+        public async Task NotifyTyping(string consultId, object payload)
+        {
+            await Clients.GroupExcept(consultId, Context.ConnectionId).SendAsync("UserTyping", payload);
+        }
+
+        // Avisa o grupo da consulta (grupo = queueId) que o status da fila mudou (LEFT | DONE).
+        // Usado pelo QueueController e pelo FilaAutoDoneWorker via IHubContext.
+        public static Task NotificarStatusFila(IHubContext<ConsultHub> hub, Guid queueId, string status)
+        {
+            return hub.Clients.Group(queueId.ToString()).SendAsync("ConsultStatusChanged", new { queueId, status });
+        }
     }
 }

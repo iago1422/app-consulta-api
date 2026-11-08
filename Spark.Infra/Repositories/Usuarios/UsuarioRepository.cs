@@ -114,18 +114,34 @@ namespace Spark.Domain.Infra.Repositories
 
         }
 
-        public Usuario GetById(Guid id)
+        public ObterUsuario.Response GetById(Guid id)
         {
             return _context
                 .Usuarios.AsNoTracking()
-                .FirstOrDefault(x => x.Id == id);
+                .Where(x => x.Id == id)
+                .Select(ParaResponse)
+                .FirstOrDefault();
         }
 
-        public List<Usuario> GetAll()
+        public List<ObterUsuario.Response> GetAll()
         {
             return _context.Usuarios
-               .AsNoTracking().ToList();
+               .AsNoTracking()
+               .Select(ParaResponse)
+               .ToList();
         }
+
+        // Projeção sem PasswordHash/SecurityStamp/ConcurrencyStamp
+        private static readonly System.Linq.Expressions.Expression<Func<Usuario, ObterUsuario.Response>> ParaResponse = x => new ObterUsuario.Response
+        {
+            Id = x.Id,
+            Nome = x.Nome,
+            Email = x.Email,
+            Cpf = x.Cpf,
+            Imagem = x.Imagem,
+            PhoneNumber = x.PhoneNumber,
+            PerfilId = x.PerfilId
+        };
 
         public async Task<AtualizarUsuario.Response> Update(AtualizarUsuario.Request DTO)
         {

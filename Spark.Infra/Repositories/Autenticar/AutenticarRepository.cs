@@ -41,19 +41,22 @@ namespace Spark.Domain.Infra.Repositories.Autenticar
         {
             EfetuarLogin.Response response = new EfetuarLogin.Response();
 
-            var user = await _userManager.FindByEmailAsync(request.Email);
+            // Mesma mensagem para email inexistente e senha errada (não revela se a conta existe)
+            const string erroLogin = "Email ou senha inválidos.";
 
-            if(user == null)
+            if (string.IsNullOrWhiteSpace(request?.Email) || string.IsNullOrEmpty(request.Senha))
             {
-                response.Erro = "Usuario incorreto ou inexistente!";
+                response.Erro = erroLogin;
+                response.Mensagem = erroLogin;
                 return response;
             }
 
-            var result = await _userManager.CheckPasswordAsync(user, request.Senha);
+            var user = await _userManager.FindByEmailAsync(request.Email);
 
-            if (!result)
+            if (user == null || !await _userManager.CheckPasswordAsync(user, request.Senha))
             {
-                response.Mensagem = "Senha incorreta!";
+                response.Erro = erroLogin;
+                response.Mensagem = erroLogin;
                 return response;
             }
 
@@ -95,7 +98,8 @@ namespace Spark.Domain.Infra.Repositories.Autenticar
                 if (user == null)
                 {
                     Console.WriteLine($"Usuário com e-mail {request.Email} não encontrado.");
-                    return null; // Ou lance uma exceção apropriada, caso necessário
+                    // mesma resposta do caso de sucesso: não revela se o email existe
+                    return new EsqueciMinhaSenha.Response { Email = request.Email };
                 }
 
                 // Gera token de recuperação de senha
@@ -103,15 +107,15 @@ namespace Spark.Domain.Infra.Repositories.Autenticar
                 var validToken = GerarTokenBase64(token);
 
                 // Monta a URL de recuperação
-                string url = $"{_configuration["AppFrontUrl"]}{_configuration["EsqueciSenhaUrl"]}?token={validToken}&email={request.Email}";
+                string url = $"{_configuration["AppFrontUrl"]}{_configuration["EsqueciSenhaUrl"]}?token={Uri.EscapeDataString(validToken)}&email={Uri.EscapeDataString(request.Email)}";
 
                 // Envia e-mail de recuperação
                 await EnviarEmailRecuperacaoSenha(request.Email, url);
 
+                // nunca devolver o token na resposta: só quem recebe o email pode resetar
                 return new EsqueciMinhaSenha.Response
                 {
-                    Email = request.Email,
-                    Token = validToken
+                    Email = request.Email
                 };
             }
             catch (Exception ex)
@@ -149,10 +153,25 @@ namespace Spark.Domain.Infra.Repositories.Autenticar
 
 
         public async Task<ResetarSenha.Response> ResetarSenha(ResetarSenha.Request model)
-        {            
+        {
+            var falha = new ResetarSenha.Response { Message = "Erro ao alterar senha", IsSuccess = false };
+
+            if (string.IsNullOrWhiteSpace(model?.Email) || string.IsNullOrEmpty(model.Token) || string.IsNullOrEmpty(model.NovaSenha))
+                return falha;
+
             var user = await _userManager.FindByEmailAsync(model.Email);
-            var decodedToken = WebEncoders.Base64UrlDecode(model.Token);
-            string normalToken = Encoding.UTF8.GetString(decodedToken);
+            if (user == null)
+                return falha;
+
+            string normalToken;
+            try
+            {
+                normalToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(model.Token));
+            }
+            catch (FormatException)
+            {
+                return falha;
+            }
 
             var result = await _userManager.ResetPasswordAsync(user, normalToken, model.NovaSenha);
 

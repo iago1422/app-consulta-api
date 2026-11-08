@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using Spark.Domain.Commands;
 using Spark.Domain.Commands.Usuario;
 using Spark.Domain.Entities.Usuarios;
@@ -19,7 +20,7 @@ namespace Spark.Api.Controllers.Usuarios
         [Route("usuario-unico/{id}")]
         [HttpGet]
         ///get
-        public Usuario GetById([FromServices]IUsuarioRepository repository, [FromRoute] Guid id)
+        public ObterUsuario.Response GetById([FromServices]IUsuarioRepository repository, [FromRoute] Guid id)
         {
             return repository.GetById(id);
         }
@@ -27,7 +28,7 @@ namespace Spark.Api.Controllers.Usuarios
         [Route("")]
         [HttpGet]
         ///get
-        public List<Usuario> GetAll([FromServices] IUsuarioRepository repository)
+        public List<ObterUsuario.Response> GetAll([FromServices] IUsuarioRepository repository)
         {
             return repository.GetAll();
         }
@@ -45,18 +46,28 @@ namespace Spark.Api.Controllers.Usuarios
         [Route("")]
         [HttpPut]
         ///put
-        public async Task<GenericCommandResult> Update([FromBody] AtualizarUsuario.Request command, [FromServices]UsuarioHandler handler)
+        public async Task<IActionResult> Update([FromBody] AtualizarUsuario.Request command, [FromServices]UsuarioHandler handler)
         {
-            return await handler.Handle(command);
+            if (!EhOProprioUsuario(command.Id))
+                return Forbid();
+
+            return Ok(await handler.Handle(command));
         }
 
         [Route("")]
         [HttpDelete]
         ///post
-        public async Task<GenericCommandResult> Delete([FromBody] DeletarUsuario.Request command, [FromServices] UsuarioHandler handler)
+        public async Task<IActionResult> Delete([FromBody] DeletarUsuario.Request command, [FromServices] UsuarioHandler handler)
         {
-            return await handler.Handle(command);
+            if (!EhOProprioUsuario(command.Id))
+                return Forbid();
+
+            return Ok(await handler.Handle(command));
         }
+
+        // Só o próprio usuário pode alterar/excluir a própria conta (id do token = NameIdentifier, ver TokenService)
+        private bool EhOProprioUsuario(Guid id) =>
+            Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioLogadoId) && usuarioLogadoId == id;
 
     }
 }

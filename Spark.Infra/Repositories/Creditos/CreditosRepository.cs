@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
 using Spark.Domain.Commands;
 using Spark.Domain.Commands.Usuario;
 using Spark.Domain.Entities;
@@ -44,51 +45,43 @@ namespace Spark.Domain.Infra.Repositories
 
             try
             {
+                using var tx = await _context.Database.BeginTransactionAsync();
+
                 // 1. Verifica se o usuário já tem conta de crédito
-                var conta = await _context.ContasCredito
-                    .FirstOrDefaultAsync(x => x.UserId == DTO.UserId);
+                var contaId = await _context.ContasCredito
+                    .Where(x => x.UserId == DTO.UserId)
+                    .Select(x => (Guid?)x.Id)
+                    .FirstOrDefaultAsync();
 
-                if (conta == null)
+                if (contaId == null)
                 {
-                    // 2. Não existe -> cria uma nova conta
-                    conta = _mapper.Map<ContaCredito>(DTO);
-
-                    // Garante que o saldo inicial venha do DTO
-                    // Ex: conta.Saldo = DTO.Saldo;
+                    // 2. Não existe -> cria uma nova conta com o saldo do DTO
+                    var conta = _mapper.Map<ContaCredito>(DTO);
                     await _context.ContasCredito.AddAsync(conta);
+                    contaId = conta.Id;
                 }
                 else
                 {
-                    // 3. Já existe -> soma o valor ao saldo
-                    conta.Saldo += DTO.Saldo; // ou DTO.Valor, dependendo do teu modelo
-
-                    _context.ContasCredito.Update(conta);
+                    // 3. Já existe -> soma no banco (atômico, sem lost update com um débito concorrente)
+                    await _context.Database.ExecuteSqlInterpolatedAsync(
+                        $@"UPDATE ""ContasCredito"" SET ""Saldo"" = ""Saldo"" + {DTO.Saldo}, ""UpdatedAt"" = {DateTime.UtcNow} WHERE ""UserId"" = {DTO.UserId}");
                 }
 
                 // 4. Cria a movimentação de crédito (COMPRA)
-                var movimentacao = new MovimentacaoCredito
+                await _context.MovimentacoesCredito.AddAsync(new MovimentacaoCredito
                 {
-                    // Ajusta esses campos conforme tua entidade:
-                    UserId = conta.UserId,                      
-                    Referencia = DTO.Referencia, // se tiver no DTO
+                    UserId = DTO.UserId,
+                    Referencia = DTO.Referencia,
                     Tipo = "COMPRA",
-                    Valor = DTO.Saldo                    
-                };
-
-                await _context.MovimentacoesCredito.AddAsync(movimentacao);
+                    Valor = DTO.Saldo
+                });
 
                 // 5. Salva tudo de uma vez
-                var linhas = await _context.SaveChangesAsync();
-
-                if (linhas <= 0)
-                {
-                    response.Sucess = false;
-                    response.Erro = "Nenhuma linha afetada ao salvar créditos.";
-                    return response;
-                }
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
 
                 response.Sucess = true;
-                response.Id = conta.Id;
+                response.Id = contaId.Value;
                 return response;
             }
             catch (Exception e)
@@ -107,53 +100,75 @@ namespace Spark.Domain.Infra.Repositories
                 .FirstOrDefault(x => x.UserId == id);
         }
 
+        public async Task<bool> ExisteMovimentacao(Guid userId, string tipo, string referencia)
+        {
+            return await _context.MovimentacoesCredito
+                .AnyAsync(m => m.UserId == userId && m.Tipo == tipo && m.Referencia == referencia);
+        }
+
         public async Task<CriarCreditos.Response> Update(CriarCreditos.Request DTO)
         {
             var response = new CriarCreditos.Response();
 
             try
             {
-                // 1. Buscar a conta existente
-                var conta = await _context.ContasCredito
-                    .FirstOrDefaultAsync(x => x.UserId == DTO.UserId);
+                using var tx = await _context.Database.BeginTransactionAsync();
 
-                if (conta == null)
+                // 1. Buscar a conta existente
+                var contaId = await _context.ContasCredito
+                    .Where(x => x.UserId == DTO.UserId)
+                    .Select(x => (Guid?)x.Id)
+                    .FirstOrDefaultAsync();
+
+                if (contaId == null)
                 {
                     response.Sucess = false;
                     response.Erro = "Conta de crédito não encontrada.";
                     return response;
                 }
 
-                // 2. Subtrair o valor recebido do saldo existente
-                // Ex: conta.Saldo atual = 100
-                //     DTO.Saldo = 30 -> novo saldo = 70
-                conta.Saldo -= DTO.Saldo;
+                response.Id = contaId.Value;
 
-                if (conta.Saldo < 0)
+                // 2. Idempotência: mesmo débito (referencia = id da fila) já feito -> sucesso sem debitar de novo
+                if (!string.IsNullOrWhiteSpace(DTO.Referencia) && await ExisteMovimentacao(DTO.UserId, "USO", DTO.Referencia))
+                {
+                    response.Sucess = true;
+                    response.Mensagem = "Débito já realizado anteriormente.";
+                    return response;
+                }
+
+                // 3. Subtrair no banco só se houver saldo (atômico, sem lost update com crédito concorrente do webhook)
+                var linhas = await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $@"UPDATE ""ContasCredito"" SET ""Saldo"" = ""Saldo"" - {DTO.Saldo}, ""UpdatedAt"" = {DateTime.UtcNow} WHERE ""UserId"" = {DTO.UserId} AND ""Saldo"" >= {DTO.Saldo}");
+
+                if (linhas == 0)
                 {
                     response.Sucess = false;
                     response.Erro = "Saldo insuficiente para realizar esta operação.";
                     return response;
                 }
 
-                _context.ContasCredito.Update(conta);
-
-                // 3. Registrar movimentação (USO)
-                var movimentacao = new MovimentacaoCredito
+                // 4. Registrar movimentação (USO)
+                await _context.MovimentacoesCredito.AddAsync(new MovimentacaoCredito
                 {
-                    UserId = conta.UserId,
-                    Tipo = "USO",  // Ex.: "USO"
+                    UserId = DTO.UserId,
+                    Tipo = "USO",
                     Valor = DTO.Saldo,            // valor movimentado (não o saldo total!)
                     Referencia = DTO.Referencia
-                };
+                });
 
-                await _context.MovimentacoesCredito.AddAsync(movimentacao);
-
-                // 4. Salvar tudo
+                // 5. Salvar tudo
                 await _context.SaveChangesAsync();
+                await tx.CommitAsync();
 
                 response.Sucess = true;
-                response.Id = conta.Id;
+                return response;
+            }
+            catch (DbUpdateException e) when (!string.IsNullOrWhiteSpace(DTO.Referencia) && e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                // retry concorrente com a mesma referencia: o outro já debitou, este foi revertido (rollback)
+                response.Sucess = true;
+                response.Mensagem = "Débito já realizado anteriormente.";
                 return response;
             }
             catch (Exception e)
@@ -163,9 +178,6 @@ namespace Spark.Domain.Infra.Repositories
                 return response;
             }
         }
-
-
-
 
     }
 }

@@ -10,6 +10,10 @@ using Microsoft.AspNetCore.Authorization;
 using System.Data;
 using Spark.Infra.Migrations;
 using static Amazon.S3.Util.S3EventNotification;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
+using Npgsql;
+using Spark.Api.Hubs;
 
 namespace Spark.Api.Controllers
 {
@@ -19,11 +23,27 @@ namespace Spark.Api.Controllers
     public class QueueController : ControllerBase
     {
         private readonly DataContext _context;
+        private readonly IHubContext<ConsultHub> _hub;
+        private readonly ILogger<QueueController> _logger;
 
-        public QueueController(DataContext context)
+        public QueueController(DataContext context, IHubContext<ConsultHub> hub, ILogger<QueueController> logger)
         {
             _context = context;
+            _hub = hub;
+            _logger = logger;
         }
+
+        // Datas são gravadas com DateTime.UtcNow em "timestamp without time zone" e voltam como Unspecified;
+        // marca como UTC para serializar com "Z" (senão o JS interpreta como horário local).
+        private static DateTime Utc(DateTime d) => DateTime.SpecifyKind(d, DateTimeKind.Utc);
+        private static DateTime? Utc(DateTime? d) => d.HasValue ? DateTime.SpecifyKind(d.Value, DateTimeKind.Utc) : null;
+
+        private Task<FilaAtendimento> BuscarAtivo(Guid tenantId, Guid fichaId) =>
+            _context.FilaAtendimento
+                .AsNoTracking()
+                .Where(x => x.TenantId == tenantId && x.FichaId == fichaId && (x.Status == "WAITING" || x.Status == "CALLED"))
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync();
 
         // =========================
         // PACIENTE
@@ -35,6 +55,11 @@ namespace Spark.Api.Controllers
         {
             if (request == null || request.TenantId == Guid.Empty || request.FichaId == Guid.Empty || request.AnamneseId == Guid.Empty)
                 return BadRequest(new { Message = "TenantI,  FichaId e AnamneseId são obrigatórios." });
+
+            // Idempotente: se o paciente já está na fila (WAITING/CALLED), devolve o registro existente
+            var ativo = await BuscarAtivo(request.TenantId, request.FichaId);
+            if (ativo != null)
+                return Ok(new { queueId = ativo.Id, status = ativo.Status });
 
             var entity = new FilaAtendimento
             {
@@ -53,10 +78,13 @@ namespace Spark.Api.Controllers
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
             {
-                // se você criou o índice parcial uq_fila_paciente_ativo,
-                // esse catch cobre o cenário do paciente já estar na fila
+                // corrida com outro join simultâneo (índice parcial uq_fila_paciente_ativo)
+                ativo = await BuscarAtivo(request.TenantId, request.FichaId);
+                if (ativo != null)
+                    return Ok(new { queueId = ativo.Id, status = ativo.Status });
+
                 return Conflict(new { Message = "Paciente já está na fila (WAITING/CALLED)." });
             }
 
@@ -92,6 +120,7 @@ namespace Spark.Api.Controllers
                 entity.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+                await ConsultHub.NotificarStatusFila(_hub, entity.Id, entity.Status);
 
                 return Ok(new
                 {
@@ -105,6 +134,7 @@ namespace Spark.Api.Controllers
                 });
             } catch (Exception ex)
             {
+                _logger.LogError(ex, "Erro ao tentar sair da fila.");
                 return BadRequest(new
                 {
                     Sucess = false,
@@ -112,6 +142,27 @@ namespace Spark.Api.Controllers
                 });
             }
            
+        }
+
+        // POST /queue/{id}/leave (sem body)
+        [HttpPost("{id:guid}/leave")]
+        public async Task<IActionResult> LeaveById([FromRoute] Guid id)
+        {
+            var entity = await _context.FilaAtendimento.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (entity == null)
+                return NotFound(new { Message = "Registro da fila não encontrado." });
+
+            // Idempotente: LEFT/DONE só devolve o status atual
+            if (entity.Status == "WAITING" || entity.Status == "CALLED")
+            {
+                entity.Status = "LEFT";
+                entity.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                await ConsultHub.NotificarStatusFila(_hub, entity.Id, entity.Status);
+            }
+
+            return Ok(new { queueId = entity.Id, status = entity.Status });
         }
 
         // GET /queue/{id}/position
@@ -181,7 +232,20 @@ namespace Spark.Api.Controllers
             await _context.SaveChangesAsync();
             await tx.CommitAsync();
 
-            return Ok(nextEntity);
+            // mesmos campos que a entidade serializava antes + anamneseId (grafia correta)
+            return Ok(new
+            {
+                id = nextEntity.Id,
+                tenantId = nextEntity.TenantId,
+                anamnseId = nextEntity.AnamnseId,
+                anamneseId = nextEntity.AnamnseId,
+                fichaId = nextEntity.FichaId,
+                tipo = nextEntity.Tipo,
+                status = nextEntity.Status,
+                createdAt = Utc(nextEntity.CreatedAt),
+                calledAt = Utc(nextEntity.CalledAt),
+                updatedAt = Utc(nextEntity.UpdatedAt)
+            });
         }
 
 
@@ -195,11 +259,17 @@ namespace Spark.Api.Controllers
             if (entity == null)
                 return NotFound(new { Message = "Registro da fila não encontrado." });
 
-            if (entity.Status != "CALLED")
+            if (entity.Status == "DONE")
+                return Ok(new { status = "DONE" });
+
+            // LEFT com CalledAt = paciente desligou antes do médico finalizar
+            if (entity.Status != "CALLED" && !(entity.Status == "LEFT" && entity.CalledAt != null))
                 return BadRequest(new { Message = "Só é possível finalizar quando o status estiver CALLED." });
 
             entity.Status = "DONE";
+            entity.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+            await ConsultHub.NotificarStatusFila(_hub, entity.Id, entity.Status);
 
             return Ok(new { status = "DONE" });
         }
@@ -224,8 +294,8 @@ namespace Spark.Api.Controllers
                     anamneseId = x.AnamnseId,
                     fichaId = x.FichaId,
                     status = x.Status,
-                    createdAt = x.CreatedAt,
-                    calledAt = x.CalledAt,
+                    createdAt = Utc(x.CreatedAt),
+                    calledAt = Utc(x.CalledAt),
                     tipo = x.Tipo
                 })
                 .ToListAsync();
