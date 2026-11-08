@@ -13,6 +13,10 @@ namespace Spark.Api.Controllers
     [Route("checkout")]
     public class CheckoutController : ControllerBase
     {
+        // Piso de R$/crédito: o menor preço já vendido (pacote antigo do app: 1000 créditos por R$950).
+        // Pacotes atuais ficam em ~1,03+/crédito, então app antigo e novo passam. Usado também no webhook.
+        public const decimal PrecoMinimoPorCredito = 0.95m;
+
         private readonly ILogger<CheckoutController> _logger;
 
         public CheckoutController(ILogger<CheckoutController> logger)
@@ -44,6 +48,14 @@ namespace Spark.Api.Controllers
                 return BadRequest(new { Message = "UnitPrice deve ser maior que zero." });
             }
 
+            var quantidade = dto.Quantity <= 0 ? 1 : dto.Quantity;
+
+            if (dto.UnitPrice * quantidade < dto.Creditos * PrecoMinimoPorCredito)
+            {
+                _logger.LogWarning("[MP] Preço abaixo do piso. UnitPrice={UnitPrice} Quantity={Quantity} Creditos={Creditos}", dto.UnitPrice, quantidade, dto.Creditos);
+                return BadRequest(new { Message = "Valor do pedido incompatível com a quantidade de créditos." });
+            }
+
             var client = new PreferenceClient();
 
             // ExternalReference em formato fácil de parsear no webhook
@@ -60,7 +72,7 @@ namespace Spark.Api.Controllers
                     new PreferenceItemRequest
                     {
                         Title = string.IsNullOrWhiteSpace(dto.Title) ? "Pedido" : dto.Title,
-                        Quantity = dto.Quantity <= 0 ? 1 : dto.Quantity,
+                        Quantity = quantidade,
                         UnitPrice = dto.UnitPrice,
                         CurrencyId = "BRL"
                     }
@@ -78,9 +90,9 @@ namespace Spark.Api.Controllers
 
                 BackUrls = new PreferenceBackUrlsRequest
                 {
-                    Success = "myapp://checkout/success",
-                    Failure = "myapp://checkout/failure",
-                    Pending = "myapp://checkout/pending"
+                    Success = "iconsulta://checkout/success",
+                    Failure = "iconsulta://checkout/failure",
+                    Pending = "iconsulta://checkout/pending"
                 },
 
                 AutoReturn = "approved",

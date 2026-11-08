@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -22,9 +21,6 @@ namespace Spark.Api.Controllers
         private readonly ICreditosRepository _creditosRepository;
         private readonly IConfiguration _config;
         private readonly ILogger<MercadoPagoWebhookController> _logger;
-
-        // trava somente para o "crédito" (approved), não para pending
-        private static readonly ConcurrentDictionary<string, byte> _credited = new();
 
         public MercadoPagoWebhookController(
             ICreditosRepository creditosRepository,
@@ -119,7 +115,7 @@ namespace Spark.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[MP] Erro ao buscar payment no MercadoPago API");
-                return Ok();
+                return StatusCode(500); // 500 para o MP tentar de novo
             }
 
             // logs úteis
@@ -157,16 +153,23 @@ namespace Spark.Api.Controllers
                 return Ok();
             }
 
-            // Idempotência correta: trava por Payment.Id (apenas no approved)
-            var creditKey = $"mp:credit:{payment.Id}";
-            if (!_credited.TryAdd(creditKey, 0))
+            // Piso de preço: valor pago tem que cobrir os créditos (ver CheckoutController.PrecoMinimoPorCredito)
+            if ((payment.TransactionAmount ?? 0) < creditos * CheckoutController.PrecoMinimoPorCredito)
             {
-                _logger.LogInformation("[MP] Crédito já processado (memória). key={key}", creditKey);
+                _logger.LogWarning("[MP] Valor pago abaixo do piso. Não creditado. paymentId={paymentId} valor={valor} creditos={creditos}",
+                    payment.Id, payment.TransactionAmount, creditos);
                 return Ok();
             }
 
             var referencia = $"MP:{payment.Id}";
             _logger.LogInformation("[MP] Referência gerada: {referencia}", referencia);
+
+            // Idempotência no banco (índice único UserId+Tipo+Referencia): retry do MP não credita duas vezes
+            if (await _creditosRepository.ExisteMovimentacao(userId, "COMPRA", referencia))
+            {
+                _logger.LogInformation("[MP] Crédito já processado. referencia={referencia}", referencia);
+                return Ok("already processed");
+            }
 
             var req = new CriarCreditos.Request
             {
@@ -175,17 +178,15 @@ namespace Spark.Api.Controllers
                 Referencia = referencia
             };
 
-            try
+            var result = await _creditosRepository.Create(req);
+            if (!result.Sucess)
             {
-                await _creditosRepository.Create(req);
-                _logger.LogInformation("[MP] Créditos criados com sucesso. userId={userId} referencia={referencia}", userId, referencia);
+                // 500 para o MP reenviar a notificação
+                _logger.LogError("[MP] Erro ao salvar créditos no repositório. userId={userId} referencia={referencia} erro={erro}", userId, referencia, result.Erro);
+                return StatusCode(500);
             }
-            catch (Exception ex)
-            {
-                // se falhar salvar, libera a chave pra permitir retry do MP
-                _credited.TryRemove(creditKey, out _);
-                _logger.LogError(ex, "[MP] Erro ao salvar créditos no repositório. userId={userId} referencia={referencia}", userId, referencia);
-            }
+
+            _logger.LogInformation("[MP] Créditos criados com sucesso. userId={userId} referencia={referencia}", userId, referencia);
 
             _logger.LogInformation("[MP] Webhook finalizado");
             return Ok();

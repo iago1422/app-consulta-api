@@ -13,10 +13,13 @@ namespace Spark.Domain.Commands
             public Guid UsuarioLogadoId { get; set; }
             public Guid UserId { get; set; }
 
-            // Tendências clínicas (ex: "Ansiedade", "Tabagismo", etc.)
-            public List<string> Tendencias { get; set; } = new();
+            // Listas SEM inicializador: campo ausente no JSON fica null e o UpdateById mantém o valor salvo
+            // (o portal manda corpo parcial, ex: só {tendencias}). No Create o AutoMapper converte null em lista vazia.
 
-            public List<string> HistoricoMedico { get; set; } = new();
+            // Tendências clínicas (ex: "Ansiedade", "Tabagismo", etc.)
+            public List<string> Tendencias { get; set; }
+
+            public List<string> HistoricoMedico { get; set; }
 
 
             // Dados básicos do paciente
@@ -28,7 +31,7 @@ namespace Spark.Domain.Commands
             public string Endereco { get; set; }
 
             // Telefones
-            public List<string> Telefones { get; set; } = new();
+            public List<string> Telefones { get; set; }
 
             // Contato de emergência
             public string ContatoEmergenciaNome { get; set; }
@@ -36,16 +39,16 @@ namespace Spark.Domain.Commands
             public string ContatoEmergenciaRelacao { get; set; }
 
             // Alergias
-            public List<string> Alergias { get; set; } = new();
+            public List<string> Alergias { get; set; }
 
             // Doenças crônicas / condições pré-existentes
-            public List<string> DoencasCronicas { get; set; } = new();
+            public List<string> DoencasCronicas { get; set; }
 
             // Histórico cirúrgico
             public string HistoricoCirurgico { get; set; }
 
             // Medicações de uso contínuo
-            public List<string> MedicacoesUsoContinuo { get; set; } = new();
+            public List<string> MedicacoesUsoContinuo { get; set; }
 
             // Histórico familiar
             public string HistoricoFamiliar { get; set; }

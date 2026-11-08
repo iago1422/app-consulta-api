@@ -40,20 +40,24 @@ namespace Spark.Api.Controllers
             return Ok(new { Data = repository.GetById(userid) });
         }
 
-        [Route("")]
-        [HttpPost]
-        ///post
-        public async Task<GenericCommandResult> Create([FromBody] CriarCreditos.Request command, [FromServices] CreditosHandler handler)
-        {
-            return await handler.Handle(command);
-        }
+        // POST /creditos removido: qualquer paciente logado conseguia se dar créditos.
+        // Crédito só entra pelo webhook do Mercado Pago (que chama o repositório direto).
 
         [Route("")]
         [HttpPut]
-        ///post
-        public async Task<CriarCreditos.Response> Update([FromBody] CriarCreditos.Request command, [FromServices] ICreditosRepository repository)
+        ///put (débito)
+        public async Task<IActionResult> Update([FromBody] CriarCreditos.Request command, [FromServices] ICreditosRepository repository)
         {
-            return await repository.Update(command);
+            if (command == null || command.Saldo <= 0)
+                return BadRequest(new CriarCreditos.Response { Erro = "O valor a debitar deve ser maior que zero." });
+
+            var result = await repository.Update(command);
+
+            // 409 em falha (saldo insuficiente, conta inexistente, erro): o portal trata 200 como sucesso
+            if (!result.Sucess)
+                return Conflict(result);
+
+            return Ok(result);
         }
 
 

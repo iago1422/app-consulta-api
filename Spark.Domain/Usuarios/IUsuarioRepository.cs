@@ -10,8 +10,8 @@ namespace Spark.Domain.Repositories
     {
         Task<CriarUsuario.Response> Create(CriarUsuario.Request usuario);
         Task<AtualizarUsuario.Response> Update(AtualizarUsuario.Request usuario);
-        Usuario GetById(Guid id);
-        List<Usuario> GetAll();
+        ObterUsuario.Response GetById(Guid id);
+        List<ObterUsuario.Response> GetAll();
         Task<DeletarUsuario.Response> Delete(DeletarUsuario.Request usuario);
 
     }
