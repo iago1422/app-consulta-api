@@ -25,6 +25,7 @@ namespace Spark.Domain.Infra.Contexts
         public DbSet<ConsultaChatMessage> ConsultasChats { get; set; }
         public DbSet<FilaAtendimento> FilaAtendimento { get; set; }
         public DbSet<UsuarioPaciente> UsuarioPacientes { get; set; }
+        public DbSet<Entities.Configuracao> Configuracoes { get; set; }
 
 
 

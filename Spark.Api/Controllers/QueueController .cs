@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Spark.Api.Hubs;
+using Spark.Api.Services;
+using Spark.Domain.Services;
 
 namespace Spark.Api.Controllers
 {
@@ -25,12 +27,14 @@ namespace Spark.Api.Controllers
         private readonly DataContext _context;
         private readonly IHubContext<ConsultHub> _hub;
         private readonly ILogger<QueueController> _logger;
+        private readonly ICustoConsulta _custos;
 
-        public QueueController(DataContext context, IHubContext<ConsultHub> hub, ILogger<QueueController> logger)
+        public QueueController(DataContext context, IHubContext<ConsultHub> hub, ILogger<QueueController> logger, ICustoConsulta custos)
         {
             _context = context;
             _hub = hub;
             _logger = logger;
+            _custos = custos;
         }
 
         // Datas são gravadas com DateTime.UtcNow em "timestamp without time zone" e voltam como Unspecified;
@@ -60,6 +64,11 @@ namespace Spark.Api.Controllers
             var ativo = await BuscarAtivo(request.TenantId, request.FichaId);
             if (ativo != null)
                 return Ok(new { queueId = ativo.Id, status = ativo.Status });
+
+            // O app antigo conhece o custo antigo: confere o saldo aqui para ninguém entrar sem poder pagar
+            var custo = await _custos.CreditosDoTipo(request.Tipo);
+            if (custo.HasValue && await _custos.SaldoDoDonoDaFicha(request.FichaId) < custo.Value)
+                return Conflict(new { message = "Saldo insuficiente para esta consulta. Recarregue seus créditos." });
 
             var entity = new FilaAtendimento
             {
@@ -228,6 +237,7 @@ namespace Spark.Api.Controllers
             // 2) Atualiza via EF
             nextEntity.Status = "CALLED";
             nextEntity.CalledAt = DateTime.UtcNow;
+            nextEntity.MedicoId = User.UsuarioId(); // histórico do painel: quem atendeu
 
             await _context.SaveChangesAsync();
             await tx.CommitAsync();

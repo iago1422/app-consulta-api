@@ -31,6 +31,9 @@ namespace Spark.Domain.Commands
             public bool Sucess { get; set; } = false;
             public string Mensagem { get; set; }
             public string Erro { get; set; }
+
+            /// <summary>Créditos efetivamente debitados (PUT /creditos).</summary>
+            public double? ValorDebitado { get; set; }
         }
     }
 }

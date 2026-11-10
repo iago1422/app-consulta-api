@@ -18,5 +18,8 @@ namespace Spark.Domain.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime? CalledAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>Médico que chamou o paciente (POST /queue/next). Nulo nos atendimentos anteriores a 2026-11.</summary>
+        public Guid? MedicoId { get; set; }
     }
 }

@@ -40,6 +40,10 @@ namespace Spark.Api.Controllers.Usuarios
         ///post
         public async Task<GenericCommandResult> Create([FromBody] CriarUsuario.Request command, [FromServices]UsuarioHandler handler)
         {
+            // Cadastro público só de paciente: médico é cadastrado por outro médico (POST /admin/medicos)
+            if (!string.Equals(command?.Perfil?.Trim(), "PACIENTE", StringComparison.OrdinalIgnoreCase))
+                return new GenericCommandResult(false, "Cadastro de médico é feito por um médico já cadastrado.", null);
+
             return await handler.Handle(command);
         }
 
