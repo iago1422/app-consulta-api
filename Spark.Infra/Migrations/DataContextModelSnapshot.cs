@@ -300,6 +300,25 @@ namespace Spark.Infra.Migrations
                     b.ToTable("Conexoes");
                 });
 
+            modelBuilder.Entity("Spark.Domain.Entities.Configuracao", b =>
+                {
+                    b.Property<string>("Chave")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("AtualizadoPor")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Valor")
+                        .HasColumnType("text");
+
+                    b.HasKey("Chave");
+
+                    b.ToTable("Configuracoes");
+                });
+
             modelBuilder.Entity("Spark.Domain.Entities.Consulta", b =>
                 {
                     b.Property<Guid>("Id")
@@ -488,6 +507,9 @@ namespace Spark.Infra.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid>("FichaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("MedicoId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Status")
