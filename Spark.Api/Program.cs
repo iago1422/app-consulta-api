@@ -64,6 +64,7 @@ namespace Spark.Api // garanta que é o Program do Spark.Api (o que vira Spark.A
                     cfg.SetBasePath(env.ContentRootPath)
                        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                       .AddJsonFile("promocao-medicos.json", optional: true, reloadOnChange: false) // versionado: só ids, repo é público
                        .AddEnvironmentVariables();
                 })
                 .ConfigureWebHostDefaults(webBuilder =>

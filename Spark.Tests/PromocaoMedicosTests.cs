@@ -12,6 +12,14 @@ namespace Spark.Tests
             Assert.Equal(new[] { "DRA.ANA@EXAMPLE.COM", "JOAO@EXAMPLE.COM", "MARIA@EXAMPLE.COM" }, emails);
         }
 
+        [Fact]
+        public void Ids_ExtraiGuidsEIgnoraEmails()
+        {
+            var lista = "894139c9-8628-497b-82b0-6afe5f61a56e, ana@example.com; 894139C9-8628-497B-82B0-6AFE5F61A56E lixo";
+            Assert.Equal(new[] { System.Guid.Parse("894139c9-8628-497b-82b0-6afe5f61a56e") }, PromocaoMedicos.Ids(lista));
+            Assert.Equal(new[] { "ANA@EXAMPLE.COM" }, PromocaoMedicos.Emails(lista));
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
