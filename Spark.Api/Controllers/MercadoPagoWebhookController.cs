@@ -86,7 +86,7 @@ namespace Spark.Api.Controllers
 
             if (!IsPaymentEvent(eventType))
             {
-                _logger.LogInformation("[MP] Evento ignorado (n„o È payment)");
+                _logger.LogInformation("[MP] Evento ignorado (n√£o √© payment)");
                 return Ok();
             }
 
@@ -98,7 +98,7 @@ namespace Spark.Api.Controllers
 
             if (!long.TryParse(paymentIdStr, out var paymentId))
             {
-                _logger.LogWarning("[MP] paymentIdStr n„o È n˙mero v·lido: {paymentIdStr}", paymentIdStr);
+                _logger.LogWarning("[MP] paymentIdStr n√£o √© n√∫mero v√°lido: {paymentIdStr}", paymentIdStr);
                 return Ok();
             }
 
@@ -118,7 +118,7 @@ namespace Spark.Api.Controllers
                 return StatusCode(500); // 500 para o MP tentar de novo
             }
 
-            // logs ˙teis
+            // logs √∫teis
             _logger.LogInformation("[MP] Payment.Id: {id}", payment.Id);
             _logger.LogInformation("[MP] Payment.Status: {status}", payment.Status);
             _logger.LogInformation("[MP] Payment.ExternalReference: {externalReference}", payment.ExternalReference);
@@ -136,38 +136,38 @@ namespace Spark.Api.Controllers
 
             if (!string.Equals(payment.Status, "approved", StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogInformation("[MP] Payment n„o aprovado. Status atual: {status}", payment.Status);
+                _logger.LogInformation("[MP] Payment n√£o aprovado. Status atual: {status}", payment.Status);
                 return Ok();
             }
 
-            _logger.LogInformation("[MP] Payment aprovado. Iniciando crÈdito...");
+            _logger.LogInformation("[MP] Payment aprovado. Iniciando cr√©dito...");
 
             var (userId, creditos) = ExtractUserAndCredits(payment);
 
-            _logger.LogInformation("[MP] userId extraÌdo: {userId}", userId);
-            _logger.LogInformation("[MP] creditos extraÌdos: {creditos}", creditos);
+            _logger.LogInformation("[MP] userId extra√≠do: {userId}", userId);
+            _logger.LogInformation("[MP] creditos extra√≠dos: {creditos}", creditos);
 
             if (userId == Guid.Empty || creditos <= 0)
             {
-                _logger.LogWarning("[MP] userId ou creditos inv·lidos. userId={userId} creditos={creditos}", userId, creditos);
+                _logger.LogWarning("[MP] userId ou creditos inv√°lidos. userId={userId} creditos={creditos}", userId, creditos);
                 return Ok();
             }
 
-            // Piso de preÁo: valor pago tem que cobrir os crÈditos (ver CheckoutController.PrecoMinimoPorCredito)
+            // Piso de pre√ßo: valor pago tem que cobrir os cr√©ditos (ver CheckoutController.PrecoMinimoPorCredito)
             if ((payment.TransactionAmount ?? 0) < creditos * CheckoutController.PrecoMinimoPorCredito)
             {
-                _logger.LogWarning("[MP] Valor pago abaixo do piso. N„o creditado. paymentId={paymentId} valor={valor} creditos={creditos}",
+                _logger.LogWarning("[MP] Valor pago abaixo do piso. N√£o creditado. paymentId={paymentId} valor={valor} creditos={creditos}",
                     payment.Id, payment.TransactionAmount, creditos);
                 return Ok();
             }
 
             var referencia = $"MP:{payment.Id}";
-            _logger.LogInformation("[MP] ReferÍncia gerada: {referencia}", referencia);
+            _logger.LogInformation("[MP] Refer√™ncia gerada: {referencia}", referencia);
 
-            // IdempotÍncia no banco (Ìndice ˙nico UserId+Tipo+Referencia): retry do MP n„o credita duas vezes
+            // Idempot√™ncia no banco (√≠ndice √∫nico UserId+Tipo+Referencia): retry do MP n√£o credita duas vezes
             if (await _creditosRepository.ExisteMovimentacao(userId, "COMPRA", referencia))
             {
-                _logger.LogInformation("[MP] CrÈdito j· processado. referencia={referencia}", referencia);
+                _logger.LogInformation("[MP] Cr√©dito j√° processado. referencia={referencia}", referencia);
                 return Ok("already processed");
             }
 
@@ -181,12 +181,12 @@ namespace Spark.Api.Controllers
             var result = await _creditosRepository.Create(req);
             if (!result.Sucess)
             {
-                // 500 para o MP reenviar a notificaÁ„o
-                _logger.LogError("[MP] Erro ao salvar crÈditos no repositÛrio. userId={userId} referencia={referencia} erro={erro}", userId, referencia, result.Erro);
+                // 500 para o MP reenviar a notifica√ß√£o
+                _logger.LogError("[MP] Erro ao salvar cr√©ditos no reposit√≥rio. userId={userId} referencia={referencia} erro={erro}", userId, referencia, result.Erro);
                 return StatusCode(500);
             }
 
-            _logger.LogInformation("[MP] CrÈditos criados com sucesso. userId={userId} referencia={referencia}", userId, referencia);
+            _logger.LogInformation("[MP] Cr√©ditos criados com sucesso. userId={userId} referencia={referencia}", userId, referencia);
 
             _logger.LogInformation("[MP] Webhook finalizado");
             return Ok();

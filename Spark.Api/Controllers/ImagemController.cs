@@ -25,7 +25,7 @@ namespace Spark.Api.Controllers
         private readonly IImagemRepository _repository; 
         private readonly IConfiguration _configuration;
 
-        public ImagemController(IImagemRepository repository, IConfiguration configuration)  // Construtor para injetar o repositório
+        public ImagemController(IImagemRepository repository, IConfiguration configuration)  // Construtor para injetar o repositÃ³rio
         {
             _repository = repository;
             _configuration = configuration;

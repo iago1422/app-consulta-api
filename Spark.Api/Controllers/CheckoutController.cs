@@ -13,8 +13,8 @@ namespace Spark.Api.Controllers
     [Route("checkout")]
     public class CheckoutController : ControllerBase
     {
-        // Piso de R$/crÈdito: o menor preÁo j· vendido (pacote antigo do app: 1000 crÈditos por R$950).
-        // Pacotes atuais ficam em ~1,03+/crÈdito, ent„o app antigo e novo passam. Usado tambÈm no webhook.
+        // Piso de R$/cr√©dito: o menor pre√ßo j√° vendido (pacote antigo do app: 1000 cr√©ditos por R$950).
+        // Pacotes atuais ficam em ~1,03+/cr√©dito, ent√£o app antigo e novo passam. Usado tamb√©m no webhook.
         public const decimal PrecoMinimoPorCredito = 0.95m;
 
         private readonly ILogger<CheckoutController> _logger;
@@ -33,18 +33,18 @@ namespace Spark.Api.Controllers
             if (dto == null)
             {
                 _logger.LogWarning("[MP] DTO nulo");
-                return BadRequest(new { Message = "Body inv·lido." });
+                return BadRequest(new { Message = "Body inv√°lido." });
             }
 
             if (dto.UserId == Guid.Empty || dto.Creditos <= 0)
             {
-                _logger.LogWarning("[MP] Dados inv·lidos. UserId={UserId} Creditos={Creditos}", dto.UserId, dto.Creditos);
-                return BadRequest(new { Message = "UserId e Creditos s„o obrigatÛrios." });
+                _logger.LogWarning("[MP] Dados inv√°lidos. UserId={UserId} Creditos={Creditos}", dto.UserId, dto.Creditos);
+                return BadRequest(new { Message = "UserId e Creditos s√£o obrigat√≥rios." });
             }
 
             if (dto.UnitPrice <= 0)
             {
-                _logger.LogWarning("[MP] UnitPrice inv·lido. UnitPrice={UnitPrice}", dto.UnitPrice);
+                _logger.LogWarning("[MP] UnitPrice inv√°lido. UnitPrice={UnitPrice}", dto.UnitPrice);
                 return BadRequest(new { Message = "UnitPrice deve ser maior que zero." });
             }
 
@@ -52,13 +52,13 @@ namespace Spark.Api.Controllers
 
             if (dto.UnitPrice * quantidade < dto.Creditos * PrecoMinimoPorCredito)
             {
-                _logger.LogWarning("[MP] PreÁo abaixo do piso. UnitPrice={UnitPrice} Quantity={Quantity} Creditos={Creditos}", dto.UnitPrice, quantidade, dto.Creditos);
-                return BadRequest(new { Message = "Valor do pedido incompatÌvel com a quantidade de crÈditos." });
+                _logger.LogWarning("[MP] Pre√ßo abaixo do piso. UnitPrice={UnitPrice} Quantity={Quantity} Creditos={Creditos}", dto.UnitPrice, quantidade, dto.Creditos);
+                return BadRequest(new { Message = "Valor do pedido incompat√≠vel com a quantidade de cr√©ditos." });
             }
 
             var client = new PreferenceClient();
 
-            // ExternalReference em formato f·cil de parsear no webhook
+            // ExternalReference em formato f√°cil de parsear no webhook
             // Ex: uid:GUID|cred:50|ord:ABC123
             var externalReference = $"uid:{dto.UserId}|cred:{dto.Creditos}|ord:{dto.OrderId}";
 
@@ -117,7 +117,7 @@ namespace Spark.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[MP] Erro ao criar preference");
-                return StatusCode(500, new { Message = "Erro ao criar preferÍncia no Mercado Pago." });
+                return StatusCode(500, new { Message = "Erro ao criar prefer√™ncia no Mercado Pago." });
             }
         }
     }

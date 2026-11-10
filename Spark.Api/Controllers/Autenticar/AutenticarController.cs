@@ -35,6 +35,29 @@ namespace Spark.Api.Controllers.Autenticar
             return new GenericCommandResult(result.Sucess, result.Erro, result);
         }
 
+        /// <summary>
+        /// Troca o token atual (mesmo vencido, dentro de 30 dias) por um novo, sem pedir senha.
+        /// O token vai no header Authorization, como em qualquer outra chamada.
+        /// </summary>
+        [HttpPost]
+        [Route("renovar")]
+        public async Task<ActionResult<GenericCommandResult>> Renovar([FromServices] UserManager<Usuario> userManager)
+        {
+            var header = Request.Headers["Authorization"].ToString();
+            var token = header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? header.Substring(7).Trim() : null;
+            var dados = _tokenService.LerTokenRenovavel(token);
+
+            var user = dados == null ? null : await userManager.FindByIdAsync(dados.Value.UserId.ToString());
+            if (user == null
+                || _tokenService.HashStamp(user.SecurityStamp) != dados.Value.Stamp
+                || await userManager.IsLockedOutAsync(user))
+            {
+                return Unauthorized(new GenericCommandResult(false, "Sessão expirada. Entre novamente.", null));
+            }
+
+            return new GenericCommandResult(true, "Sessão renovada", new { token = _tokenService.GenerateToken(user) });
+        }
+
         [Route("confirmaremail")]
         [HttpGet]
         ///get

@@ -47,7 +47,7 @@ namespace Spark.Domain.Infra.Repositories
             {
                 using var tx = await _context.Database.BeginTransactionAsync();
 
-                // 1. Verifica se o usu·rio j· tem conta de crÈdito
+                // 1. Verifica se o usu√°rio j√° tem conta de cr√©dito
                 var contaId = await _context.ContasCredito
                     .Where(x => x.UserId == DTO.UserId)
                     .Select(x => (Guid?)x.Id)
@@ -55,19 +55,19 @@ namespace Spark.Domain.Infra.Repositories
 
                 if (contaId == null)
                 {
-                    // 2. N„o existe -> cria uma nova conta com o saldo do DTO
+                    // 2. N√£o existe -> cria uma nova conta com o saldo do DTO
                     var conta = _mapper.Map<ContaCredito>(DTO);
                     await _context.ContasCredito.AddAsync(conta);
                     contaId = conta.Id;
                 }
                 else
                 {
-                    // 3. J· existe -> soma no banco (atÙmico, sem lost update com um dÈbito concorrente)
+                    // 3. J√° existe -> soma no banco (at√¥mico, sem lost update com um d√©bito concorrente)
                     await _context.Database.ExecuteSqlInterpolatedAsync(
                         $@"UPDATE ""ContasCredito"" SET ""Saldo"" = ""Saldo"" + {DTO.Saldo}, ""UpdatedAt"" = {DateTime.UtcNow} WHERE ""UserId"" = {DTO.UserId}");
                 }
 
-                // 4. Cria a movimentaÁ„o de crÈdito (COMPRA)
+                // 4. Cria a movimenta√ß√£o de cr√©dito (COMPRA)
                 await _context.MovimentacoesCredito.AddAsync(new MovimentacaoCredito
                 {
                     UserId = DTO.UserId,
@@ -86,10 +86,10 @@ namespace Spark.Domain.Infra.Repositories
             }
             catch (Exception e)
             {
-                Console.WriteLine("Erro ao criar crÈditos. Message:'{0}'", e.Message);
+                Console.WriteLine("Erro ao criar cr√©ditos. Message:'{0}'", e.Message);
 
                 response.Sucess = false;
-                response.Erro = "Erro ao criar crÈditos. Message: " + e.Message;
+                response.Erro = "Erro ao criar cr√©ditos. Message: " + e.Message;
                 return response;
             }
         }
@@ -123,37 +123,37 @@ namespace Spark.Domain.Infra.Repositories
                 if (contaId == null)
                 {
                     response.Sucess = false;
-                    response.Erro = "Conta de crÈdito n„o encontrada.";
+                    response.Erro = "Conta de cr√©dito n√£o encontrada.";
                     return response;
                 }
 
                 response.Id = contaId.Value;
 
-                // 2. IdempotÍncia: mesmo dÈbito (referencia = id da fila) j· feito -> sucesso sem debitar de novo
+                // 2. Idempot√™ncia: mesmo d√©bito (referencia = id da fila) j√° feito -> sucesso sem debitar de novo
                 if (!string.IsNullOrWhiteSpace(DTO.Referencia) && await ExisteMovimentacao(DTO.UserId, "USO", DTO.Referencia))
                 {
                     response.Sucess = true;
-                    response.Mensagem = "DÈbito j· realizado anteriormente.";
+                    response.Mensagem = "D√©bito j√° realizado anteriormente.";
                     return response;
                 }
 
-                // 3. Subtrair no banco sÛ se houver saldo (atÙmico, sem lost update com crÈdito concorrente do webhook)
+                // 3. Subtrair no banco s√≥ se houver saldo (at√¥mico, sem lost update com cr√©dito concorrente do webhook)
                 var linhas = await _context.Database.ExecuteSqlInterpolatedAsync(
                     $@"UPDATE ""ContasCredito"" SET ""Saldo"" = ""Saldo"" - {DTO.Saldo}, ""UpdatedAt"" = {DateTime.UtcNow} WHERE ""UserId"" = {DTO.UserId} AND ""Saldo"" >= {DTO.Saldo}");
 
                 if (linhas == 0)
                 {
                     response.Sucess = false;
-                    response.Erro = "Saldo insuficiente para realizar esta operaÁ„o.";
+                    response.Erro = "Saldo insuficiente para realizar esta opera√ß√£o.";
                     return response;
                 }
 
-                // 4. Registrar movimentaÁ„o (USO)
+                // 4. Registrar movimenta√ß√£o (USO)
                 await _context.MovimentacoesCredito.AddAsync(new MovimentacaoCredito
                 {
                     UserId = DTO.UserId,
                     Tipo = "USO",
-                    Valor = DTO.Saldo,            // valor movimentado (n„o o saldo total!)
+                    Valor = DTO.Saldo,            // valor movimentado (n√£o o saldo total!)
                     Referencia = DTO.Referencia
                 });
 
@@ -166,15 +166,15 @@ namespace Spark.Domain.Infra.Repositories
             }
             catch (DbUpdateException e) when (!string.IsNullOrWhiteSpace(DTO.Referencia) && e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
             {
-                // retry concorrente com a mesma referencia: o outro j· debitou, este foi revertido (rollback)
+                // retry concorrente com a mesma referencia: o outro j√° debitou, este foi revertido (rollback)
                 response.Sucess = true;
-                response.Mensagem = "DÈbito j· realizado anteriormente.";
+                response.Mensagem = "D√©bito j√° realizado anteriormente.";
                 return response;
             }
             catch (Exception e)
             {
                 response.Sucess = false;
-                response.Erro = "Erro ao fazer update de crÈditos. Message: " + e.Message;
+                response.Erro = "Erro ao fazer update de cr√©ditos. Message: " + e.Message;
                 return response;
             }
         }
