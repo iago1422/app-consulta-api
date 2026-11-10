@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 
@@ -26,8 +28,13 @@ namespace Spark.Api.Hubs
 
         public async Task SendChatToGroup(string consultId, object payload)
         {
+            if (payload is JsonElement mensagem) ChatRecente.Guardar(consultId, mensagem);
             await Clients.Group(consultId).SendAsync("ReceiveChatMessage", payload);
         }
+
+        // Clientes novos chamam depois de JoinConsult (e a cada reconexão) para recuperar o que
+        // chegou enquanto estavam fora do grupo. Versões antigas não chamam e seguem só ao vivo.
+        public IReadOnlyList<JsonElement> GetChatHistory(string consultId) => ChatRecente.Listar(consultId);
 
         // Indicador de "digitando" no chat (repassa só para o outro peer)
         public async Task NotifyTyping(string consultId, object payload)
@@ -39,6 +46,7 @@ namespace Spark.Api.Hubs
         // Usado pelo QueueController e pelo FilaAutoDoneWorker via IHubContext.
         public static Task NotificarStatusFila(IHubContext<ConsultHub> hub, Guid queueId, string status)
         {
+            if (status == "DONE") ChatRecente.Encerrar(queueId.ToString());
             return hub.Clients.Group(queueId.ToString()).SendAsync("ConsultStatusChanged", new { queueId, status });
         }
     }
