@@ -38,6 +38,10 @@ namespace Spark.Tests
             var roles = typeof(AdminController).GetCustomAttribute<AuthorizeAttribute>().Roles;
             Assert.DoesNotContain(Perfis.Paciente, roles);
             Assert.Contains(Perfis.Medico, roles);
+            Assert.Contains(Perfis.Administrador, roles);
+            // ids de produção (GET /perfil): PACIENTE é e0e938ef, ADMINISTRADOR é acb3830a
+            Assert.Equal("e0e938ef-5ca3-48bc-b5a5-30a0fd0b64ca", Perfis.Paciente);
+            Assert.Equal("acb3830a-402b-4865-9f70-7b28d39f66ad", Perfis.Administrador);
         }
 
         [Fact]
