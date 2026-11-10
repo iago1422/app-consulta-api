@@ -107,11 +107,11 @@ namespace Spark.Api.Controllers
         [HttpGet("medicos")]
         public async Task<IActionResult> Medicos()
         {
-            // Equipe inteira: há médico em produção no terceiro perfil (e0e938ef-…), não só em MEDICO
+            // Equipe inteira (médicos e administradores): os mesmos perfis que acessam o painel
             var perfilMedico = Guid.Parse(Perfis.Medico);
-            var perfilTerceiro = Guid.Parse(Perfis.Terceiro);
+            var perfilAdministrador = Guid.Parse(Perfis.Administrador);
             var medicos = await _context.Usuarios.AsNoTracking()
-                .Where(u => u.PerfilId == perfilMedico || u.PerfilId == perfilTerceiro)
+                .Where(u => u.PerfilId == perfilMedico || u.PerfilId == perfilAdministrador)
                 .OrderBy(u => u.Nome)
                 .Select(u => new { id = u.Id, nome = u.Nome, email = u.Email })
                 .ToListAsync();

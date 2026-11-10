@@ -44,6 +44,10 @@ namespace Spark.Api // garanta que é o Program do Spark.Api (o que vira Spark.A
                 var context = scope.ServiceProvider.GetRequiredService<DataContext>();
                 EsquemaPainelAdmin.Garantir(context);
 
+                var restaurados = PromocaoMedicos.RestaurarAdministradores(context);
+                if (restaurados > 0)
+                    Console.WriteLine($"[PERFIS] {restaurados} conta(s) restaurada(s) para ADMINISTRADOR.");
+
                 // PROMOVER_MEDICOS="a@x.com,b@y.com": libera o painel para essas contas (PACIENTE -> MEDICO)
                 var promovidos = PromocaoMedicos.Aplicar(context, cfg[PromocaoMedicos.Chave]);
                 if (promovidos > 0)
