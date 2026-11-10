@@ -40,7 +40,15 @@ namespace Spark.Api // garanta que é o Program do Spark.Api (o que vira Spark.A
 
             // Esquema do painel administrativo (aditivo, idempotente). Falhou = API não sobe e o deploy anterior segue no ar.
             using (var scope = host.Services.CreateScope())
-                EsquemaPainelAdmin.Garantir(scope.ServiceProvider.GetRequiredService<DataContext>());
+            {
+                var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+                EsquemaPainelAdmin.Garantir(context);
+
+                // PROMOVER_MEDICOS="a@x.com,b@y.com": libera o painel para essas contas (PACIENTE -> MEDICO)
+                var promovidos = PromocaoMedicos.Aplicar(context, cfg[PromocaoMedicos.Chave]);
+                if (promovidos > 0)
+                    Console.WriteLine($"[PROMOVER_MEDICOS] {promovidos} conta(s) promovida(s) para MEDICO.");
+            }
 
             // Log pra confirmar em runtime
             var addrs = host.Services.GetService(typeof(IServerAddressesFeature)) as IServerAddressesFeature;
