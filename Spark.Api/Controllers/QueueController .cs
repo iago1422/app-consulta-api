@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Spark.Api.Hubs;
+using Spark.Api.Services;
 
 namespace Spark.Api.Controllers
 {
@@ -228,6 +229,7 @@ namespace Spark.Api.Controllers
             // 2) Atualiza via EF
             nextEntity.Status = "CALLED";
             nextEntity.CalledAt = DateTime.UtcNow;
+            nextEntity.MedicoId = User.UsuarioId(); // histórico do painel: quem atendeu
 
             await _context.SaveChangesAsync();
             await tx.CommitAsync();
