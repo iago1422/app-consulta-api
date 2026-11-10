@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Spark.Domain.Api;
 using MercadoPago.Config;
 
-namespace Spark.Api // garanta que È o Program do Spark.Api (o que vira Spark.Api.dll)
+namespace Spark.Api // garanta que √© o Program do Spark.Api (o que vira Spark.Api.dll)
 {
     public class Program
     {
@@ -28,7 +28,7 @@ namespace Spark.Api // garanta que È o Program do Spark.Api (o que vira Spark.Ap
             if (string.IsNullOrWhiteSpace(accessToken))
             {
                 throw new InvalidOperationException(
-                    "Mercado Pago AccessToken n„o encontrado. Configure 'MercadoPago:AccessToken' no appsettings ou a env var MP_ACCESS_TOKEN.");
+                    "Mercado Pago AccessToken n√£o encontrado. Configure 'MercadoPago:AccessToken' no appsettings ou a env var MP_ACCESS_TOKEN.");
             }
 
             MercadoPagoConfig.AccessToken = accessToken;

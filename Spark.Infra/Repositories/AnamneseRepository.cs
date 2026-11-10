@@ -23,9 +23,9 @@ namespace Spark.Domain.Infra.Repositories
         }
 
         /// <summary>
-        /// Cria ou atualiza a anamnese de um usu·rio.
-        /// Se j· existir anamnese para o UserId, atualiza.
-        /// Se n„o existir, cria uma nova.
+        /// Cria ou atualiza a anamnese de um usu√°rio.
+        /// Se j√° existir anamnese para o UserId, atualiza.
+        /// Se n√£o existir, cria uma nova.
         /// </summary>
         public async Task<CriarAnamnese.Response> Create(CriarAnamnese.Request DTO)
         {
@@ -34,19 +34,19 @@ namespace Spark.Domain.Infra.Repositories
             try
             {              
 
-                // Verifica se j· existe anamnese para esse usu·rio
+                // Verifica se j√° existe anamnese para esse usu√°rio
                 var anamnese = await _context.Anamneses
                     .FirstOrDefaultAsync(x => x.UserId == DTO.UserId);
 
                 if (anamnese == null)
                 {
-                    // N„o existe -> cria nova
+                    // N√£o existe -> cria nova
                     anamnese = _mapper.Map<Anamnese>(DTO);
                     await _context.Anamneses.AddAsync(anamnese);
                 }
                 else
                 {
-                    // J· existe -> atualiza campos
+                    // J√° existe -> atualiza campos
                     _mapper.Map(DTO, anamnese);
                     _context.Anamneses.Update(anamnese);
                 }
@@ -76,7 +76,7 @@ namespace Spark.Domain.Infra.Repositories
         }
 
         /// <summary>
-        /// Retorna a anamnese pelo UserId (mantendo a sem‚ntica que vocÍ j· usava).
+        /// Retorna a anamnese pelo UserId (mantendo a sem√¢ntica que voc√™ j√° usava).
         /// </summary>
         public Anamnese GetById(Guid userId)
         {
@@ -86,7 +86,7 @@ namespace Spark.Domain.Infra.Repositories
         }
 
         /// <summary>
-        /// Atualiza a anamnese existente de um usu·rio.
+        /// Atualiza a anamnese existente de um usu√°rio.
         /// </summary>
         public async Task<CriarAnamnese.Response> Update(CriarAnamnese.Request DTO)
         {
@@ -100,7 +100,7 @@ namespace Spark.Domain.Infra.Repositories
                 if (anamnese == null)
                 {
                     response.Sucess = false;
-                    response.Erro = "Anamnese n„o encontrada para este usu·rio.";
+                    response.Erro = "Anamnese n√£o encontrada para este usu√°rio.";
                     return response;
                 }
 

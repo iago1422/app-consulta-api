@@ -41,8 +41,8 @@ namespace Spark.Domain.Infra.Repositories.Autenticar
         {
             EfetuarLogin.Response response = new EfetuarLogin.Response();
 
-            // Mesma mensagem para email inexistente e senha errada (n„o revela se a conta existe)
-            const string erroLogin = "Email ou senha inv·lidos.";
+            // Mesma mensagem para email inexistente e senha errada (n√£o revela se a conta existe)
+            const string erroLogin = "Email ou senha inv√°lidos.";
 
             if (string.IsNullOrWhiteSpace(request?.Email) || string.IsNullOrEmpty(request.Senha))
             {
@@ -97,22 +97,22 @@ namespace Spark.Domain.Infra.Repositories.Autenticar
                 var user = await _userManager.FindByEmailAsync(request.Email);
                 if (user == null)
                 {
-                    Console.WriteLine($"Usu·rio com e-mail {request.Email} n„o encontrado.");
-                    // mesma resposta do caso de sucesso: n„o revela se o email existe
+                    Console.WriteLine($"Usu√°rio com e-mail {request.Email} n√£o encontrado.");
+                    // mesma resposta do caso de sucesso: n√£o revela se o email existe
                     return new EsqueciMinhaSenha.Response { Email = request.Email };
                 }
 
-                // Gera token de recuperaÁ„o de senha
+                // Gera token de recupera√ß√£o de senha
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var validToken = GerarTokenBase64(token);
 
-                // Monta a URL de recuperaÁ„o
+                // Monta a URL de recupera√ß√£o
                 string url = $"{_configuration["AppFrontUrl"]}{_configuration["EsqueciSenhaUrl"]}?token={Uri.EscapeDataString(validToken)}&email={Uri.EscapeDataString(request.Email)}";
 
-                // Envia e-mail de recuperaÁ„o
+                // Envia e-mail de recupera√ß√£o
                 await EnviarEmailRecuperacaoSenha(request.Email, url);
 
-                // nunca devolver o token na resposta: sÛ quem recebe o email pode resetar
+                // nunca devolver o token na resposta: s√≥ quem recebe o email pode resetar
                 return new EsqueciMinhaSenha.Response
                 {
                     Email = request.Email
@@ -120,7 +120,7 @@ namespace Spark.Domain.Infra.Repositories.Autenticar
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro ao processar a recuperaÁ„o de senha: {ex.Message}");
+                Console.WriteLine($"Erro ao processar a recupera√ß√£o de senha: {ex.Message}");
                 return null; 
             }
         }
@@ -128,7 +128,7 @@ namespace Spark.Domain.Infra.Repositories.Autenticar
         private async Task EnviarEmailRecuperacaoSenha(string email, string url)
         {
             string corpoEmail =
-                $"<h1>InstruÁıes para resetar sua senha</h1>" +
+                $"<h1>Instru√ß√µes para resetar sua senha</h1>" +
                 $"<p>Para resetar sua senha, clique no link abaixo:</p><br />" +
                 $"<a href='{url}' " +
                     $"style=\"display: inline-flex; align-items: center; justify-content: center; " +

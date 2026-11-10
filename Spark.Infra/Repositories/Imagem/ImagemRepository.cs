@@ -79,7 +79,7 @@ namespace Spark.Domain.Infra.Repositories
                     ContentType = File.ContentType
                 };
 
-                // Adiciona o cabeçalho Cache-Control usando Metadata
+                // Adiciona o cabeÃ§alho Cache-Control usando Metadata
                 Transfer.Metadata.Add("Cache-Control", "max-age=31536000, public");
 
                 await fileTransferUtilit.UploadAsync(Transfer);

@@ -32,12 +32,12 @@ namespace Spark.Domain.Infra.Contexts
         {         
             base.OnModelCreating(modelBuilder);
 
-            // Conta de crédito é única por usuário
+            // Conta de crÃ©dito Ã© Ãºnica por usuÃ¡rio
             modelBuilder.Entity<ContaCredito>()
                 .HasIndex(c => c.UserId)
                 .IsUnique();
 
-            // Movimentação com referência única (idempotência)
+            // MovimentaÃ§Ã£o com referÃªncia Ãºnica (idempotÃªncia)
             modelBuilder.Entity<MovimentacaoCredito>()
                 .HasIndex(m => new { m.UserId, m.Tipo, m.Referencia })
                 .IsUnique();
