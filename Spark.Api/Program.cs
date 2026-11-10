@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Spark.Domain.Api;
+using Spark.Domain.Infra.Contexts;
 using MercadoPago.Config;
 
 namespace Spark.Api // garanta que é o Program do Spark.Api (o que vira Spark.Api.dll)
@@ -36,6 +37,10 @@ namespace Spark.Api // garanta que é o Program do Spark.Api (o que vira Spark.A
 
             // (opcional) ajuste fino de http client
             // MercadoPagoConfig.HttpClient.Timeout = TimeSpan.FromSeconds(20);
+
+            // Esquema do painel administrativo (aditivo, idempotente). Falhou = API não sobe e o deploy anterior segue no ar.
+            using (var scope = host.Services.CreateScope())
+                EsquemaPainelAdmin.Garantir(scope.ServiceProvider.GetRequiredService<DataContext>());
 
             // Log pra confirmar em runtime
             var addrs = host.Services.GetService(typeof(IServerAddressesFeature)) as IServerAddressesFeature;
