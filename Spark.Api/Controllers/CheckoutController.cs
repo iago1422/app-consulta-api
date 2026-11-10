@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MercadoPago.Client.Preference;
+using Spark.Domain.Configuracao;
+using Spark.Domain.Repositories;
 
 namespace Spark.Api.Controllers
 {
@@ -13,9 +15,8 @@ namespace Spark.Api.Controllers
     [Route("checkout")]
     public class CheckoutController : ControllerBase
     {
-        // Piso de R$/crédito: o menor preço já vendido (pacote antigo do app: 1000 créditos por R$950).
-        // Pacotes atuais ficam em ~1,03+/crédito, então app antigo e novo passam. Usado também no webhook.
-        public const decimal PrecoMinimoPorCredito = 0.95m;
+        // Piso de R$/crédito (também usado no webhook). Fonte: ConfigConsultas.
+        public const decimal PrecoMinimoPorCredito = ConfigConsultas.PrecoMinimoPorCredito;
 
         private readonly ILogger<CheckoutController> _logger;
 
@@ -26,7 +27,7 @@ namespace Spark.Api.Controllers
 
         // POST /checkout/create
         [HttpPost("create")]
-        public async Task<IActionResult> CreatePreference([FromBody] CreateOrderDto dto)
+        public async Task<IActionResult> CreatePreference([FromBody] CreateOrderDto dto, [FromServices] IConfiguracaoRepository configRepo)
         {
             _logger.LogInformation("[MP] CreatePreference chamado");
 
@@ -36,34 +37,29 @@ namespace Spark.Api.Controllers
                 return BadRequest(new { Message = "Body inválido." });
             }
 
-            if (dto.UserId == Guid.Empty || dto.Creditos <= 0)
+            if (dto.UserId == Guid.Empty)
             {
-                _logger.LogWarning("[MP] Dados inválidos. UserId={UserId} Creditos={Creditos}", dto.UserId, dto.Creditos);
+                _logger.LogWarning("[MP] UserId vazio");
                 return BadRequest(new { Message = "UserId e Creditos são obrigatórios." });
             }
 
-            if (dto.UnitPrice <= 0)
+            var quantidadeCliente = dto.Quantity <= 0 ? 1 : dto.Quantity;
+            var config = (await configRepo.ObterConsultas()).Config;
+            var (pedido, erro) = ResolvedorPedido.Resolver(dto.PacoteId, dto.Creditos, dto.UnitPrice * quantidadeCliente, dto.Title, config);
+            if (erro != null)
             {
-                _logger.LogWarning("[MP] UnitPrice inválido. UnitPrice={UnitPrice}", dto.UnitPrice);
-                return BadRequest(new { Message = "UnitPrice deve ser maior que zero." });
-            }
-
-            var quantidade = dto.Quantity <= 0 ? 1 : dto.Quantity;
-
-            if (dto.UnitPrice * quantidade < dto.Creditos * PrecoMinimoPorCredito)
-            {
-                _logger.LogWarning("[MP] Preço abaixo do piso. UnitPrice={UnitPrice} Quantity={Quantity} Creditos={Creditos}", dto.UnitPrice, quantidade, dto.Creditos);
-                return BadRequest(new { Message = "Valor do pedido incompatível com a quantidade de créditos." });
+                _logger.LogWarning("[MP] Pedido recusado: {Erro}. PacoteId={PacoteId} UnitPrice={UnitPrice} Creditos={Creditos}", erro, dto.PacoteId, dto.UnitPrice, dto.Creditos);
+                return BadRequest(new { Message = erro });
             }
 
             var client = new PreferenceClient();
 
             // ExternalReference em formato fácil de parsear no webhook
             // Ex: uid:GUID|cred:50|ord:ABC123
-            var externalReference = $"uid:{dto.UserId}|cred:{dto.Creditos}|ord:{dto.OrderId}";
+            var externalReference = $"uid:{dto.UserId}|cred:{pedido.Creditos}|ord:{dto.OrderId}";
 
-            _logger.LogInformation("[MP] Criando preference. OrderId={OrderId} UserId={UserId} Creditos={Creditos} ExternalReference={ExternalReference}",
-                dto.OrderId, dto.UserId, dto.Creditos, externalReference);
+            _logger.LogInformation("[MP] Criando preference. OrderId={OrderId} UserId={UserId} Creditos={Creditos} PrecoTotal={PrecoTotal} ExternalReference={ExternalReference}",
+                dto.OrderId, dto.UserId, pedido.Creditos, pedido.PrecoTotal, externalReference);
 
             var request = new PreferenceRequest
             {
@@ -71,9 +67,9 @@ namespace Spark.Api.Controllers
                 {
                     new PreferenceItemRequest
                     {
-                        Title = string.IsNullOrWhiteSpace(dto.Title) ? "Pedido" : dto.Title,
-                        Quantity = quantidade,
-                        UnitPrice = dto.UnitPrice,
+                        Title = pedido.Titulo,
+                        Quantity = 1,
+                        UnitPrice = pedido.PrecoTotal,
                         CurrencyId = "BRL"
                     }
                 },
@@ -84,7 +80,7 @@ namespace Spark.Api.Controllers
                 Metadata = new Dictionary<string, object>
                 {
                     ["userId"] = dto.UserId.ToString(),
-                    ["creditos"] = dto.Creditos.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    ["creditos"] = pedido.Creditos.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     ["orderId"] = dto.OrderId ?? string.Empty
                 },
 
@@ -128,6 +124,7 @@ namespace Spark.Api.Controllers
         int Quantity,
         decimal UnitPrice,
         Guid UserId,
-        decimal Creditos
+        decimal Creditos,
+        string PacoteId = null // app ≥ 1.3.10
     );
 }
