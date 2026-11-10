@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Spark.Api.Services;
+using Spark.Domain.Commands.Usuario;
 using Spark.Domain.Configuracao;
+using Spark.Domain.Handlers;
 using Spark.Domain.Infra.Contexts;
 using Spark.Domain.Repositories;
 
@@ -98,6 +101,50 @@ namespace Spark.Api.Controllers
             });
 
             return Ok(new { total, itens });
+        }
+
+        // GET /admin/medicos
+        [HttpGet("medicos")]
+        public async Task<IActionResult> Medicos()
+        {
+            var perfilMedico = Guid.Parse(Perfis.Medico);
+            var medicos = await _context.Usuarios.AsNoTracking()
+                .Where(u => u.PerfilId == perfilMedico)
+                .OrderBy(u => u.Nome)
+                .Select(u => new { id = u.Id, nome = u.Nome, email = u.Email })
+                .ToListAsync();
+            return Ok(new { data = medicos });
+        }
+
+        public class NovoMedico
+        {
+            public string Nome { get; set; }
+            public string Email { get; set; }
+            public string Senha { get; set; }
+            public string Cpf { get; set; }
+        }
+
+        // POST /admin/medicos — o cadastro público não aceita mais MEDICO
+        [HttpPost("medicos")]
+        public async Task<IActionResult> CriarMedico([FromBody] NovoMedico body, [FromServices] UsuarioHandler handler)
+        {
+            if (body == null)
+                return BadRequest(new { message = "Dados do médico são obrigatórios." });
+
+            var r = await handler.Handle(new CriarUsuario.Request
+            {
+                Nome = body.Nome, Email = body.Email, Senha = body.Senha, Cpf = body.Cpf, Perfil = "MEDICO", Imagem = ""
+            });
+
+            // Não devolve r.Data: é o comando, com a senha
+            if (!r.Success)
+            {
+                var detalhes = r.Data is IEnumerable<Flunt.Notifications.Notification> n
+                    ? string.Join(" ", n.Select(x => x.Message))
+                    : r.Message;
+                return BadRequest(new { message = detalhes });
+            }
+            return Ok(new { message = "Médico cadastrado." });
         }
     }
 }

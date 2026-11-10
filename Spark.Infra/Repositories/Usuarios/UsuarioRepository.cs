@@ -54,7 +54,7 @@ namespace Spark.Domain.Infra.Repositories
                 if (emailExist != null)
                 {
                     response.Sucess = false;
-                    response.Mensagem = "Esse email j� est� cadastrado!";
+                    response.Mensagem = "Esse email já está cadastrado!";
 
                     return response;
                 }                     
