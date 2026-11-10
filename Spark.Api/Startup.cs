@@ -85,6 +85,7 @@ namespace Spark.Domain.Api
             services.AddTransient<IAnamneseRepository, AnamneseRepository>();
             services.AddTransient<IFichaClinicaRepository, FichaClinicaRepository>();
             services.AddTransient<IConfiguracaoRepository, ConfiguracaoRepository>();
+            services.AddTransient<ICustoConsulta, CustoConsultaService>();
 
             // Handlers / Services
             services.AddTransient<ITokenService, TokenService>();

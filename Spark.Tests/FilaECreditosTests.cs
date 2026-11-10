@@ -8,6 +8,7 @@ using Spark.Api.Controllers;
 using Spark.Domain.Commands;
 using Spark.Domain.Entities;
 using Spark.Domain.Repositories;
+using Spark.Domain.Services;
 using Spark.Infra.Workers;
 using Xunit;
 
@@ -53,7 +54,7 @@ namespace Spark.Tests
             var repo = new Mock<ICreditosRepository>();
             var controller = new CreditoController(repo.Object, null);
 
-            var result = await controller.Update(new CriarCreditos.Request { UserId = Guid.NewGuid(), Saldo = saldo }, repo.Object);
+            var result = await controller.Update(new CriarCreditos.Request { UserId = Guid.NewGuid(), Saldo = saldo }, repo.Object, Mock.Of<ICustoConsulta>());
 
             Assert.IsType<BadRequestObjectResult>(result);
             repo.Verify(r => r.Update(It.IsAny<CriarCreditos.Request>()), Times.Never);
@@ -69,10 +70,39 @@ namespace Spark.Tests
                 .ReturnsAsync(new CriarCreditos.Response { Sucess = sucesso, Erro = sucesso ? null : "Saldo insuficiente para realizar esta operação." });
             var controller = new CreditoController(repo.Object, null);
 
-            var result = await controller.Update(new CriarCreditos.Request { UserId = Guid.NewGuid(), Saldo = 60 }, repo.Object);
+            var result = await controller.Update(new CriarCreditos.Request { UserId = Guid.NewGuid(), Saldo = 60 }, repo.Object, Mock.Of<ICustoConsulta>());
 
             var objectResult = Assert.IsAssignableFrom<ObjectResult>(result);
             Assert.Equal(statusEsperado, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task Debito_DeConsultaDaFila_UsaCustoDaConfiguracao()
+        {
+            var repo = new Mock<ICreditosRepository>();
+            repo.Setup(r => r.Update(It.IsAny<CriarCreditos.Request>())).ReturnsAsync(new CriarCreditos.Response { Sucess = true });
+            var custos = new Mock<ICustoConsulta>();
+            var filaId = Guid.NewGuid().ToString();
+            custos.Setup(c => c.CreditosDaFila(filaId)).ReturnsAsync(80);
+
+            var result = await new CreditoController(repo.Object, null)
+                .Update(new CriarCreditos.Request { UserId = Guid.NewGuid(), Saldo = 60, Referencia = filaId }, repo.Object, custos.Object);
+
+            repo.Verify(r => r.Update(It.Is<CriarCreditos.Request>(x => x.Saldo == 80)), Times.Once);
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(80, ((CriarCreditos.Response)ok.Value).ValorDebitado);
+        }
+
+        [Fact]
+        public async Task Debito_SemConsultaDaFila_MantemValorEnviado()
+        {
+            var repo = new Mock<ICreditosRepository>();
+            repo.Setup(r => r.Update(It.IsAny<CriarCreditos.Request>())).ReturnsAsync(new CriarCreditos.Response { Sucess = true });
+
+            await new CreditoController(repo.Object, null)
+                .Update(new CriarCreditos.Request { UserId = Guid.NewGuid(), Saldo = 60, Referencia = "avulso" }, repo.Object, Mock.Of<ICustoConsulta>());
+
+            repo.Verify(r => r.Update(It.Is<CriarCreditos.Request>(x => x.Saldo == 60)), Times.Once);
         }
     }
 }
