@@ -68,6 +68,17 @@ namespace Spark.Tests
             Assert.Equal("Valor do pedido incompatível com a quantidade de créditos.", erro);
         }
 
+        [Theory]
+        [InlineData("0.5")]
+        [InlineData("1.5")]
+        [InlineData("3000000000")]
+        public void CreditosFracionariosOuForaDoLimite_Erro(string creditos)
+        {
+            var (pedido, erro) = ResolvedorPedido.Resolver(null, decimal.Parse(creditos, System.Globalization.CultureInfo.InvariantCulture), 1000m, "x", ConfigConsultas.Padrao());
+            Assert.Equal("Créditos inválidos.", erro);
+            Assert.Null(pedido);
+        }
+
         [Fact]
         public void SemPacoteESemCreditos_Erro()
         {

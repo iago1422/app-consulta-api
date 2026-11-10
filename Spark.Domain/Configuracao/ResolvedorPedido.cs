@@ -27,6 +27,8 @@ namespace Spark.Domain.Configuracao
 
             if (creditosCliente <= 0)
                 return (null, "UserId e Creditos são obrigatórios.");
+            if (creditosCliente < 1 || creditosCliente > int.MaxValue || creditosCliente != decimal.Truncate(creditosCliente))
+                return (null, "Créditos inválidos.");
 
             // App antigo: reconhece o pacote pelos créditos e cobra o preço atual
             if (creditosCliente == decimal.Truncate(creditosCliente)
